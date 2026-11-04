@@ -11,8 +11,12 @@
 - Official MCP Registry: published `dev.agentchrome/agentchrome` v0.1.0 with DNS auth (`server.json`). PulseMCP and other directories import from that registry.
 - awesome-mcp-servers: the entry is committed on `/tmp/ams` branch `add-agentchrome`. The push is blocked because the `gh` token lacks the `workflow` scope, and the fork's main is behind upstream.
 
+- Bing Webmaster Tools: added https://agentchrome.dev/ (DNS CNAME verification) and submitted the sitemap.
+- Claude directory: connector submitted for review under Circo, Inc. Reviewer key is in ~/.agentchrome-registry/claude-reviewer-key.txt.
+- ChatGPT plugin: package in integrations/chatgpt-plugin. Upload blocked: OpenAI's POST /v1/dashapi/uploads/plugins returns 404 for every upload.
+
 ## To do
 
-- Bing Webmaster Tools: import the site from Search Console. The page is blocked until the extension is reloaded, because of the 1Password frame.
+- Retry the ChatGPT plugin upload at https://platform.openai.com/plugins, then set the domain challenge and the reviewer account.
 - Every week, check Search Console queries and pages, and check the AI Overview with `google_serp` for "chrome mcp server", "claude code chrome", "codex chrome extension" and "playwright mcp vs chrome devtools mcp".
 - List on Smithery, Glama, mcp.so and mcpservers.org.
