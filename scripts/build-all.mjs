@@ -1,5 +1,6 @@
 // Builds extension + CLI and stages the public assets the Worker serves (landing page, installer, CLI, extension zip).
 import { execFileSync } from "node:child_process";
+import { buildContent } from "./build-content.mjs";
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,4 +36,5 @@ cpSync(join(root, "brand/icons/icon512.png"), join(pub, "icon-512.png"));
 cpSync(join(root, "brand/icons/icon256.png"), join(pub, "icon-256.png"));
 cpSync(join(root, "brand/social-card.png"), join(pub, "social-card.png"));
 writeFileSync(join(pub, "_headers"), "/install\n  Content-Type: text/plain; charset=utf-8\n/install.sh\n  Content-Type: text/plain; charset=utf-8\n/cli.mjs\n  Content-Type: text/javascript; charset=utf-8\n");
-console.log(`public assets staged for ${server}`);
+const pageCount = buildContent({ root, pub, server, layout: readFileSync(join(root, "site/content-layout.html"), "utf8") });
+console.log(`public assets staged for ${server} (${pageCount} content pages)`);

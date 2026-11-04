@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "dev.agentchrome/agentchrome",
+  "title": "Agent Chrome",
+  "description": "Let AI agents use your real, signed-in Chrome: tabs, clicks, forms, screenshots and video.",
+  "websiteUrl": "https://agentchrome.dev",
+  "repository": {
+    "url": "https://github.com/ShadowWalker2014/agentchrome",
+    "source": "github",
+    "id": "1445682626"
+  },
+  "version": "0.1.0",
+  "icons": [
+    { "src": "https://agentchrome.dev/icon-512.png", "mimeType": "image/png", "sizes": ["512x512"] }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://agentchrome.dev/mcp"
+    }
+  ]
+}
