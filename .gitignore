@@ -1,0 +1,12 @@
+node_modules
+dist
+.wrangler
+.dev.vars
+*.log
+.DS_Store
+test-results
+.e2e-profile*
+packages/server/wrangler.self.jsonc
+packages/server/public
+packages/extension/agent-chrome-mcp-extension.zip
+packages/cli/README.md

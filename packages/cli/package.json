@@ -1,0 +1,18 @@
+{
+  "name": "agent-chrome-mcp",
+  "version": "0.1.0",
+  "description": "Let every coding agent (Claude Code, Codex, Gemini, Antigravity, Grok, Muse, Cursor, opencode) drive your real Chrome profiles through a secure remote MCP server.",
+  "type": "module",
+  "bin": { "agent-chrome-mcp": "dist/cli.mjs" },
+  "files": ["dist", "README.md"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/ShadowWalker2014/agent-chrome-mcp.git" },
+  "homepage": "https://github.com/ShadowWalker2014/agent-chrome-mcp",
+  "keywords": ["mcp", "chrome", "browser", "claude", "codex", "agent", "automation", "cloudflare"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": { "@agent-chrome-mcp/protocol": "workspace:*", "@types/node": "^24.0.0", "ws": "^8.18.0", "@types/ws": "^8.5.12" }
+}

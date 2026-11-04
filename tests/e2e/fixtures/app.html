@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>ACM Test App</title>
+<style>body{font-family:system-ui;margin:24px} .tall{height:2200px;background:linear-gradient(#fff,#eef)} #out{padding:8px;border:1px solid #ccc;min-height:20px}</style></head>
+<body>
+<header><h1>ACM Test App</h1><nav><a href="#about" id="aboutLink">About us</a></nav></header>
+<main>
+  <article><p>The quick brown fox jumps over the lazy dog. This paragraph exists so get_page_text has some readable content to extract from the main article element of this test page.</p></article>
+  <form id="f" onsubmit="event.preventDefault(); document.getElementById('out').textContent = 'submitted:' + new FormData(this).get('email') + ':' + new FormData(this).get('plan') + ':' + (this.agree.checked ? 'agreed' : 'no')">
+    <label for="email">Email address</label> <input id="email" name="email" type="email" placeholder="you@example.com">
+    <label for="plan">Plan</label> <select id="plan" name="plan"><option value="free">Free</option><option value="pro">Pro plan</option></select>
+    <label><input type="checkbox" name="agree" id="agree"> I agree to the terms</label>
+    <textarea id="notes" aria-label="Notes"></textarea>
+    <button type="submit" id="submit">Sign up now</button>
+  </form>
+  <div id="out"></div>
+  <button id="counter" onclick="this.dataset.n = (+this.dataset.n||0)+1; this.textContent = 'Clicked ' + this.dataset.n" style="margin-top:12px">Click me</button>
+  <button id="dbl" ondblclick="this.textContent='Double clicked'">Double click me</button>
+  <button id="alertBtn" onclick="window.__confirmed = confirm('Proceed?')">Open confirm</button>
+  <input id="keys" aria-label="Key test" onkeydown="if(event.key==='Enter') this.dataset.enter='yes'">
+  <input id="file" type="file" aria-label="Upload file" onchange="document.getElementById('fileOut').textContent = this.files[0].name + ':' + this.files[0].size">
+  <span id="fileOut"></span>
+  <div id="later"></div>
+  <div class="tall"></div>
+  <footer id="bottom">Bottom of page</footer>
+</main>
+<script>
+  console.log('app booted', 42);
+  console.warn('a warning');
+  setTimeout(() => console.error('delayed error'), 100);
+  setTimeout(() => (document.getElementById('later').textContent = 'Loaded later'), 1500);
+  fetch('/api/data?x=1').then(r => r.json()).then(d => console.log('data', d.ok));
+</script>
+</body></html>

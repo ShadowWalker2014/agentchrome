@@ -1,0 +1,21 @@
+// Builds extension + CLI and stages the public assets the Worker serves (landing page, installer, CLI, extension zip).
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const server = (process.env.ACM_DEFAULT_SERVER ?? readFileSync(join(root, "DEFAULT_SERVER"), "utf8")).trim();
+const run = (cwd) => execFileSync("node", ["build.mjs"], { cwd: join(root, cwd), stdio: "inherit", env: { ...process.env, ACM_DEFAULT_SERVER: server } });
+run("packages/extension");
+run("packages/cli");
+const pub = join(root, "packages/server/public");
+rmSync(pub, { recursive: true, force: true });
+mkdirSync(pub, { recursive: true });
+for (const f of ["index.html", "install.sh"]) writeFileSync(join(pub, f), readFileSync(join(root, "site", f), "utf8").replaceAll("__SERVER__", server));
+cpSync(join(pub, "install.sh"), join(pub, "install"));
+cpSync(join(root, "packages/cli/dist/cli.mjs"), join(pub, "cli.mjs"));
+cpSync(join(root, "packages/extension/agent-chrome-mcp-extension.zip"), join(pub, "agent-chrome-mcp-extension.zip"));
+cpSync(join(root, "brand/logo.svg"), join(pub, "logo.svg"));
+cpSync(join(root, "brand/social-card.png"), join(pub, "social-card.png"));
+writeFileSync(join(pub, "_headers"), "/install\n  Content-Type: text/plain; charset=utf-8\n/install.sh\n  Content-Type: text/plain; charset=utf-8\n/cli.mjs\n  Content-Type: text/javascript; charset=utf-8\n");
+console.log(`public assets staged for ${server}`);

@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agent-chrome-mcp",
+  "account_id": "5a8f4d72ace5f438725e1dfd1b0380ff",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": { "enabled": true },
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "durable_objects": { "bindings": [{ "name": "HUB", "class_name": "AccountHub" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AccountHub"] }],
+  "d1_databases": [{ "binding": "DB", "database_name": "agent-chrome-mcp", "database_id": "c0ef4430-ca25-45bf-a455-066794d86b4e", "migrations_dir": "migrations" }],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "ac38aa3a078b40699df678a7f2b7bae1" }],
+  "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "agent-chrome-mcp-artifacts" }],
+  "ratelimits": [
+    { "name": "SIGNUP_LIMITER", "namespace_id": "4101", "simple": { "limit": 5, "period": 60 } },
+    { "name": "PAIR_LIMITER", "namespace_id": "4102", "simple": { "limit": 20, "period": 60 } }
+  ],
+  "vars": { "SIGNUP_MODE": "open" }
+}

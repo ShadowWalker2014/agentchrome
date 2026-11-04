@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Agent Chrome MCP",
+  "short_name": "Agent Chrome",
+  "version": "0.1.0",
+  "description": "Let Claude Code, Codex, Gemini, Grok, Muse and any MCP agent drive your real Chrome profiles through a secure remote MCP server.",
+  "minimum_chrome_version": "120",
+  "permissions": ["debugger", "tabs", "tabGroups", "scripting", "storage", "offscreen", "alarms", "downloads"],
+  "optional_permissions": ["history", "identity", "identity.email"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": {
+    "default_title": "Agent Chrome MCP",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+}

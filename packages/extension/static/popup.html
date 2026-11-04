@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head>
+<body class="popup">
+  <header class="brand"><img src="icons/logo.svg" width="26" height="26" alt=""><strong>Agent Chrome MCP</strong><span id="status" class="status">…</span></header>
+
+  <section id="unpaired" hidden>
+    <p class="muted">Pair this Chrome profile with your account. Get a code by running <code>agent-chrome-mcp pair</code> in a terminal.</p>
+    <label for="code">Pairing code</label>
+    <input id="code" placeholder="ABCDE-FGHJK" autocomplete="off" spellcheck="false">
+    <label for="pname">Name for this profile</label>
+    <input id="pname" placeholder="Work Chrome">
+    <details><summary>Server</summary>
+      <input id="server" spellcheck="false">
+      <p class="hint">Use the URL of your own deployment or <code>http://127.0.0.1:47823</code> for the local server.</p>
+    </details>
+    <div id="pairError" class="err" hidden></div>
+    <button id="pair" class="primary wide">Connect</button>
+  </section>
+
+  <section id="paired" hidden>
+    <div class="card">
+      <div class="row"><span class="muted">Profile</span><input id="name" class="inline"></div>
+      <div class="row"><span class="muted">Server</span><span id="serverLabel" class="mono small"></span></div>
+      <div class="row"><span class="muted">Browser id</span><span id="deviceId" class="mono small"></span></div>
+    </div>
+    <h2>Agent sessions</h2>
+    <div id="sessions" class="sessions"><p class="muted small">No agent has used this browser yet.</p></div>
+    <div class="actions">
+      <button id="stopAll" class="danger">Stop all agents</button>
+      <button id="resumeAll">Resume all</button>
+    </div>
+    <h2>Settings</h2>
+    <label class="toggle"><input type="checkbox" id="showOverlay"> Glowing border while agents work</label>
+    <label class="toggle"><input type="checkbox" id="askNewSites"> Ask before an agent uses a new site</label>
+    <label class="toggle"><input type="checkbox" id="history"> Let agents search browsing history</label>
+    <label for="blocked" class="small">Blocked sites (one per line)</label>
+    <textarea id="blocked" rows="2" placeholder="bank.example.com"></textarea>
+    <div id="lastError" class="err" hidden></div>
+    <div class="actions">
+      <button id="reconnect">Reconnect</button>
+      <button id="unpair" class="danger">Disconnect</button>
+    </div>
+  </section>
+  <footer class="muted small">v<span id="version"></span> · <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp" target="_blank">GitHub</a></footer>
+  <script src="popup.js" type="module"></script>
+</body></html>
