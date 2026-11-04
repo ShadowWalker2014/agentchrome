@@ -141,7 +141,33 @@ async function captureRaw(tabId: number, params: Record<string, unknown>): Promi
   return data;
 }
 
-export async function screenshot(
+export async function screenshot(tabId: number, opts: Parameters<typeof screenshotCdp>[1] = {}): ReturnType<typeof screenshotCdp> {
+  try {
+    return await screenshotCdp(tabId, opts);
+  } catch (e) {
+    // The debugger is blocked (another extension's frame): the visible tab can still be captured without it.
+    if (opts.fullPage || !/Cannot control this tab/i.test(String((e as Error).message))) throw e;
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab.active) await chrome.tabs.update(tabId, { active: true });
+    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: opts.format === "png" ? "png" : "jpeg", quality: opts.quality ?? 80 });
+    const mimeType = opts.format === "png" ? "image/png" : "image/jpeg";
+    const raw = dataUrl.split(",")[1]!;
+    const bmp = await createImageBitmap(b64ToBlob(raw, mimeType));
+    const cssW = tab.width ?? bmp.width;
+    const cssH = tab.height ?? bmp.height;
+    bmp.close();
+    const scale = targetScale(cssW, cssH);
+    const width = Math.max(1, Math.round(cssW * scale));
+    const height = Math.max(1, Math.round(cssH * scale));
+    const base64 = await resize(raw, mimeType, width, height, mimeType, opts.quality ?? 80);
+    shots.set(tabId, { scale, width, height });
+    const imageId = `img_${++imageSeq}`;
+    images.set(imageId, { base64, mimeType });
+    return { base64, mimeType, width, height, imageId, cssWidth: cssW, cssHeight: cssH, truncated: false, inner: false };
+  }
+}
+
+async function screenshotCdp(
   tabId: number,
   opts: { format?: "jpeg" | "png"; quality?: number; fullPage?: boolean; hideOverlay?: boolean } = {},
 ): Promise<{ base64: string; mimeType: string; width: number; height: number; imageId: string; cssWidth: number; cssHeight: number; truncated: boolean; inner: boolean }> {

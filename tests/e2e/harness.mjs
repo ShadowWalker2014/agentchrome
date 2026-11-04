@@ -45,7 +45,7 @@ export function startFixture() {
       res.writeHead(200, { "content-type": "text/html" });
       return res.end("<title>Leave</title><h1>Unsaved</h1><script>addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; });</script>");
     }
-    if (req.url === "/second") {
+    if (req.url?.split("?")[0] === "/second") {
       res.writeHead(200, { "content-type": "text/html" });
       return res.end("<title>Second page</title><h1>Second page</h1><p>Hello from page two.</p>");
     }
@@ -77,17 +77,18 @@ export async function signup() {
 }
 
 /** Launch a fresh Chromium profile with the extension and pair it to the account. */
-export async function launchBrowser(apiKey, name) {
+export async function launchBrowser(apiKey, name, opts = {}) {
   const userDataDir = mkdtempSync(join(tmpdir(), "acm-e2e-"));
   const headless = process.env.HEADLESS === "1";
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless,
     channel: "chromium",
     viewport: null,
-    args: [`--disable-extensions-except=${EXT_DIR}`, `--load-extension=${EXT_DIR}`, "--window-size=1280,900", "--no-first-run"],
+    args: [`--disable-extensions-except=${[EXT_DIR, ...(opts.extraExtensions ?? [])].join(",")}`, `--load-extension=${[EXT_DIR, ...(opts.extraExtensions ?? [])].join(",")}`, "--window-size=1280,900", "--no-first-run"],
   });
-  let sw = context.serviceWorkers()[0];
-  if (!sw) sw = await context.waitForEvent("serviceworker", { timeout: 15_000 });
+  const ours = (w) => w.url().endsWith("/background.js");
+  let sw = context.serviceWorkers().find(ours);
+  if (!sw) sw = await context.waitForEvent("serviceworker", { predicate: ours, timeout: 15_000 });
   // Close the welcome tab the extension opens on install, keep one normal tab.
   await new Promise((r) => setTimeout(r, 800));
   for (const p of context.pages()) if (p.url().includes("welcome.html")) await p.close();

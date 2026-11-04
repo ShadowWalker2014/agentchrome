@@ -4,16 +4,18 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { launchBrowser, mcpClient, pageFor, signup, startFixture } from "./harness.mjs";
 
-let fixture, browser, mcp, page;
+let fixture, browser, mcp, page, acctKey;
 const refOf = (text, re) => text.match(re)?.[1];
 const b64 = (s) => Buffer.from(s).toString("base64");
 
 before(async () => {
   fixture = await startFixture();
   const acct = await signup();
+  acctKey = acct.apiKey;
   browser = await launchBrowser(acct.apiKey, "Edge");
   mcp = await mcpClient(acct.apiKey, "claude-code");
   await mcp.call("navigate", { url: `${fixture.url}/edge` });
@@ -183,3 +185,24 @@ test("the status pill never blocks a click on a button underneath it", async () 
   assert.equal(pass, false);
 });
 
+
+test("another extension's frame (like 1Password) doesn't block navigate, click or screenshot", async () => {
+  const blockerDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures/blocker-ext");
+  const b2 = await launchBrowser(acctKey, "Blocked", { extraExtensions: [blockerDir] });
+  try {
+    const nav = await mcp.call("navigate", { url: `${fixture.url}/?blocker=1`, browser: "Blocked" });
+    assert.match(nav.text, /Loaded/, nav.text);
+    const p = pageFor(b2.context, "blocker=1");
+    await p.waitForSelector("com-1password-button", { state: "attached" }).catch(() => {});
+    const shot = await mcp.call("screenshot", { browser: "Blocked" });
+    assert.equal(shot.images.length, 1, shot.text);
+    const ref = (await mcp.call("find", { query: "Click me", browser: "Blocked" })).text.match(/button "Click me" \[(ref_\d+)\]/)?.[1];
+    assert.ok(ref, "found the button");
+    const click = await mcp.call("computer", { action: "left_click", ref, browser: "Blocked" });
+    assert.doesNotMatch(click.text, /Cannot control/, click.text);
+    const away = await mcp.call("navigate", { url: `${fixture.url}/second?blocker=1`, browser: "Blocked" });
+    assert.match(away.text, /Second page/, away.text);
+  } finally {
+    await b2.close();
+  }
+});

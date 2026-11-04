@@ -13,6 +13,8 @@ let ws: WebSocket | null = null;
 let status: Status = "unpaired";
 let lastError = "";
 let backoff = 1000;
+let connectStartedAt = 0;
+let lastServerTraffic = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let pingTimer: ReturnType<typeof setInterval> | undefined;
 let activeCalls = 0;
@@ -63,15 +65,20 @@ async function connect() {
     return;
   }
   ws = sock;
+  connectStartedAt = Date.now();
   sock.onopen = async () => {
     backoff = 1000;
+    lastServerTraffic = Date.now();
     setStatus("connected");
     sock.send(JSON.stringify({ t: "hello", name: c.name ?? "Chrome", email: await profileName(), version: VERSION, userAgent: navigator.userAgent }));
     clearInterval(pingTimer);
     // Traffic every 20s keeps the MV3 service worker alive while connected.
     pingTimer = setInterval(() => sock.readyState === WebSocket.OPEN && sock.send('{"t":"ping"}'), 20_000);
   };
-  sock.onmessage = (ev) => onMessage(sock, ev.data);
+  sock.onmessage = (ev) => {
+    lastServerTraffic = Date.now();
+    onMessage(sock, ev.data);
+  };
   sock.onclose = async (ev) => {
     if (ws === sock) ws = null;
     clearInterval(pingTimer);
@@ -307,7 +314,25 @@ onUserCancel(() => {
 
 chrome.alarms.create("acm-keepalive", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((a) => {
-  if (a.name === "acm-keepalive" && (!ws || ws.readyState === WebSocket.CLOSED)) connect();
+  if (a.name === "acm-keepalive") {
+    // Watchdog: a socket can hang in CONNECTING, or stay "open" after the network dropped without a close event.
+    const stuck =
+      ws &&
+      ((ws.readyState === WebSocket.CONNECTING && Date.now() - connectStartedAt > 20_000) ||
+        (ws.readyState === WebSocket.OPEN && lastServerTraffic && Date.now() - lastServerTraffic > 90_000) ||
+        ws.readyState === WebSocket.CLOSING);
+    if (stuck) {
+      const old = ws!;
+      ws = null;
+      try {
+        old.close();
+      } catch {}
+    }
+    if (!ws || ws.readyState === WebSocket.CLOSED) {
+      backoff = 1000;
+      connect();
+    }
+  }
   if (a.name === "acm-keepalive") pollConnect(); // resume after the service worker was suspended
 });
 chrome.runtime.onStartup.addListener(connect);
@@ -316,6 +341,11 @@ chrome.runtime.onInstalled.addListener(async (d) => {
   connect();
 });
 connect();
+// Reconnect as soon as the network comes back.
+self.addEventListener("online", () => {
+  backoff = 1000;
+  if (!ws || ws.readyState !== WebSocket.OPEN) connect();
+});
 
 // Test hook: lets automated end-to-end tests pair without the popup.
 (globalThis as any).__acmPair = pair;

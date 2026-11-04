@@ -191,7 +191,28 @@ export async function attach(tabId: number): Promise<void> {
         if (!/chrome-extension/i.test(String((first as Error).message))) throw first;
         await chrome.scripting.executeScript({ target: { tabId }, func: () => (document.activeElement as HTMLElement | null)?.blur?.() }).catch(() => {});
         await new Promise((r) => setTimeout(r, 250));
-        await chrome.debugger.attach({ tabId }, "1.3");
+        try {
+          await chrome.debugger.attach({ tabId }, "1.3");
+        } catch (second) {
+          if (!/chrome-extension/i.test(String((second as Error).message))) throw second;
+          // Still blocked: remove other extensions' injected frames (1Password, Bitwarden, Grammarly menus...).
+          // They come back the next time the user focuses a field.
+          await chrome.scripting
+            .executeScript({
+              target: { tabId, allFrames: true },
+              func: () => {
+                const sweep = (root: Document | ShadowRoot) => {
+                  for (const f of Array.from(root.querySelectorAll("iframe"))) if (/^chrome-extension:/i.test(f.getAttribute("src") ?? f.src ?? "")) f.remove();
+                  for (const el of Array.from(root.querySelectorAll("*"))) if (el.shadowRoot) sweep(el.shadowRoot);
+                };
+                sweep(document);
+                for (const el of Array.from(document.querySelectorAll("com-1password-button, com-1password-menu, com-bitwarden-inline-menu, grammarly-desktop-integration"))) el.remove();
+              },
+            })
+            .catch(() => {});
+          await new Promise((r) => setTimeout(r, 150));
+          await chrome.debugger.attach({ tabId }, "1.3");
+        }
       }
     } catch (e) {
       const msg = (e as Error).message ?? String(e);

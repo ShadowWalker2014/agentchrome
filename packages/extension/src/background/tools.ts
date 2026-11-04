@@ -358,9 +358,10 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       if (!entry) throw new Error(delta < 0 ? "There is no previous page." : "There is no next page.");
       await go(cdp.send(tabId, "Page.navigateToHistoryEntry", { entryId: entry.id }));
     };
-    if (url === "back") await history(-1);
-    else if (url === "forward") await history(1);
-    else if (url === "reload") await go(cdp.send(tabId, "Page.reload", { ignoreCache: false }));
+    const blocked = (e: unknown) => /Cannot control this tab/i.test(String((e as Error)?.message));
+    if (url === "back") await history(-1).catch((e) => (blocked(e) ? chrome.tabs.goBack(tabId) : Promise.reject(e)));
+    else if (url === "forward") await history(1).catch((e) => (blocked(e) ? chrome.tabs.goForward(tabId) : Promise.reject(e)));
+    else if (url === "reload") await go(cdp.send(tabId, "Page.reload", { ignoreCache: false })).catch((e) => (blocked(e) ? chrome.tabs.reload(tabId) : Promise.reject(e)));
     else {
       const target = normalizeUrl(url);
       if (/^file:/i.test(target) && !(await chrome.extension.isAllowedFileSchemeAccess())) {
@@ -371,8 +372,14 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       // The debugger can't attach to chrome:// and similar pages, so navigate those (and away from them) through the tabs API.
       if (RESTRICTED.test(target) || /^file:/i.test(target) || (RESTRICTED.test(current) && !/^about:blank/.test(current))) await chrome.tabs.update(tabId, { url: target });
       else {
-        const nav = (await go(cdp.send(tabId, "Page.navigate", { url: target }))) ?? {};
-        if (nav.errorText && nav.errorText !== "net::ERR_ABORTED") navError = nav.errorText;
+        try {
+          const nav = (await go(cdp.send(tabId, "Page.navigate", { url: target }))) ?? {};
+          if (nav.errorText && nav.errorText !== "net::ERR_ABORTED") navError = nav.errorText;
+        } catch (e) {
+          // The debugger can't attach (another extension's frame); the tabs API still navigates.
+          if (!/Cannot control this tab/i.test(String((e as Error).message))) throw e;
+          await chrome.tabs.update(tabId, { url: target });
+        }
       }
     }
     const loaded = await waitForLoad(tabId, Math.min(a.timeoutMs ?? 30_000, 55_000));

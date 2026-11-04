@@ -11,3 +11,4 @@ packages/server/public
 packages/extension/agentchrome-extension.zip
 packages/cli/README.md
 integrations/*.zip
+store/*.zip
