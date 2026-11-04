@@ -5,11 +5,11 @@ description: Drive the user's real Chrome (signed-in profiles) through the agent
 
 # Using Agent Chrome
 
-The `agentchrome` MCP server controls the user's own Chrome through an extension. You act in **your own tab group** (named after your agent) and a glowing border shows the user which tab you are driving. Several Chrome profiles can be paired; each is a separate "browser".
+The `agentchrome` MCP server controls the user's own Chrome through an extension. You act in **your own tab group** (named after your task) and a glowing border shows the user which tab you are driving. Several Chrome profiles can be paired; each is a separate "browser".
 
 ## Start every browser task like this
 
-1. `tabs_context` — get your tab group and a `tabId` (creates a blank tab if you have none).
+1. `tabs_context task="Fix checkout bug"` — get your tab group and a `tabId` (creates a blank tab if you have none). `task` is a 2-4 word name for your job; the group is renamed to it so the user can tell your tabs apart. Rename it with `tab_groups action=update title=...` when the job changes.
 2. `navigate` with a URL — waits for the load and returns the title.
 3. Read before acting: `get_page_text` for content, `read_page filter="interactive"` for controls with refs, or `find "sign in button"`.
 4. Act with refs: `computer action=left_click ref=ref_12`, `form_input ref=... value=...`, `computer action=type text=...`, `computer action=key text=Enter`.

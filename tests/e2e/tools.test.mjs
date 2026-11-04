@@ -50,6 +50,13 @@ test("navigate loads the page and shows the pulsing border overlay", async () =>
   assert.ok(hasOverlay, "overlay host injected");
 });
 
+test("tabs_context task names the session group and keeps the agent label", async () => {
+  const ctx = JSON.parse((await mcp.call("tabs_context", { task: "  Check   pricing page " })).text);
+  assert.equal(ctx.group.title, "Check pricing page");
+  const list = JSON.parse((await mcp.call("tab_groups", { action: "list" })).text);
+  assert.equal(list.find((g) => g.session).title, "Check pricing page");
+});
+
 test("tab_groups renames and recolors the session group", async () => {
   const r = await mcp.call("tab_groups", { action: "update", title: "Checkout QA", color: "green" });
   assert.match(r.text, /"Checkout QA" \(green\)/);

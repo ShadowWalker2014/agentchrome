@@ -8,7 +8,10 @@ export interface SessionState {
   client: string;
   /** Icon key of the agent (claude, codex, gemini, …) or "" when unknown. */
   agent: string;
+  /** Group title: the agent's short task name once it sets one, else the agent name. */
   title: string;
+  /** Agent name shown on the page overlay and approval prompts, e.g. "Claude Code 2". */
+  agentLabel?: string;
   color: `${chrome.tabGroups.Color}`;
   groupId?: number;
   windowId?: number;
@@ -78,6 +81,7 @@ export async function getSession(info: SessionInfo): Promise<SessionState> {
       client: info.client,
       agent: agentFor(info.client).key,
       title: sameClient ? `${pretty} ${sameClient + 1}` : pretty,
+      agentLabel: sameClient ? `${pretty} ${sameClient + 1}` : pretty,
       color: COLORS[Object.keys(all).length % COLORS.length]!,
       lastActive: Date.now(),
     };
@@ -96,6 +100,20 @@ export async function getSession(info: SessionInfo): Promise<SessionState> {
   s.lastActive = Date.now();
   await save();
   return s;
+}
+
+export function agentLabel(s: SessionState): string {
+  return s.agentLabel ?? s.title;
+}
+
+/** Name the session's tab group after the agent's task ("Fix checkout bug"). */
+export async function nameGroup(s: SessionState, task: unknown): Promise<void> {
+  const name = String(task ?? "").replace(/\s+/g, " ").trim().slice(0, 32);
+  if (!name || name === s.title) return;
+  s.agentLabel ??= s.title;
+  s.title = name;
+  if (await groupAlive(s.groupId)) await chrome.tabGroups.update(s.groupId!, { title: name }).catch(() => {});
+  await updateSession(s);
 }
 
 export async function updateSession(s: SessionState) {

@@ -4,7 +4,7 @@ import { modifierBits } from "./keys";
 import * as page from "./page";
 import * as rec from "./recording";
 import { gate, getConnection, getSettings } from "./settings";
-import { allSessions, createTab, ensureInGroup, getSession, groupTabs, resolveTab, sessionsForTab, updateSession, type SessionState } from "./sessions";
+import { agentLabel, allSessions, createTab, ensureInGroup, getSession, groupTabs, nameGroup, resolveTab, sessionsForTab, updateSession, type SessionState } from "./sessions";
 
 const text = (t: string): ContentBlock => ({ type: "text", text: t });
 const ok = (...blocks: ContentBlock[]): CallToolResult => ({ content: blocks });
@@ -24,7 +24,7 @@ async function overlayWorking(tabId: number, s: SessionState) {
   await page.tryContent(tabId, "overlay", {
     ...rec.presentationOf(tabId),
     state: s.paused ? "paused" : "working",
-    label: s.paused ? `${s.title} is paused` : `${s.title} is working`,
+    label: s.paused ? `${agentLabel(s)} is paused` : `${agentLabel(s)} is working`,
     agent: s.agent,
     rec: since ? { since } : null,
   });
@@ -32,7 +32,7 @@ async function overlayWorking(tabId: number, s: SessionState) {
 
 async function overlayIdle(tabId: number, s: SessionState) {
   const since = rec.recordingSince(tabId);
-  await page.tryContent(tabId, "overlay", { ...rec.presentationOf(tabId), state: "idle", label: `${s.title} is working`, agent: s.agent, rec: since ? { since } : null, linger: 2500 });
+  await page.tryContent(tabId, "overlay", { ...rec.presentationOf(tabId), state: "idle", label: `${agentLabel(s)} is working`, agent: s.agent, rec: since ? { since } : null, linger: 2500 });
 }
 
 // ---------------- helpers ----------------
@@ -41,7 +41,7 @@ async function moveCursor(tabId: number, s: SessionState, x: number, y: number, 
   const pres = rec.presentationOf(tabId);
   // While recording, the clip's cursor choice wins over the user's on-screen setting.
   if (!pres.clean && !(await getSettings()).showCursor) return;
-  await page.tryContent(tabId, "cursorTo", { x, y, label: s.title, agent: s.agent, press, skin: pres.skin, ...extra });
+  await page.tryContent(tabId, "cursorTo", { x, y, label: agentLabel(s), agent: s.agent, press, skin: pres.skin, ...extra });
 }
 
 // ---------------- side effects of an action: new tabs, downloads, file pickers ----------------
@@ -184,6 +184,7 @@ async function uploadArtifact(blob: Blob, name: string): Promise<{ url?: string;
 
 const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
   async tabs_context(a, { session }) {
+    if (a.task) await nameGroup(session, a.task);
     if (a.all) {
       const tabs = await chrome.tabs.query({});
       const groups = await chrome.tabGroups.query({});
@@ -223,7 +224,8 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
 
   async tabs_create(a, { session, info }) {
     const url = a.url ? normalizeUrl(String(a.url)) : "about:blank";
-    if (a.url) await gate(url, session.title);
+    if (a.task) await nameGroup(session, a.task);
+    if (a.url) await gate(url, agentLabel(session));
     // Open blank first and attach the debugger so console/network capture covers the first load.
     const tab = await createTab(session, "about:blank", Boolean(a.active));
     if (a.url) {
@@ -285,7 +287,10 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       if (a.collapsed !== undefined) patch.collapsed = Boolean(a.collapsed);
       const g = await chrome.tabGroups.update(gid, patch);
       if (g && gid === session.groupId) {
-        if (a.title !== undefined) session.title = String(a.title);
+        if (a.title !== undefined) {
+          session.agentLabel ??= session.title;
+          session.title = String(a.title);
+        }
         if (a.color) session.color = a.color;
         await updateSession(session);
       }
@@ -301,7 +306,10 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       if (Object.keys(patch).length) await chrome.tabGroups.update(groupId, patch);
       if (a.makeSessionGroup) {
         session.groupId = groupId;
-        if (a.title) session.title = String(a.title);
+        if (a.title) {
+          session.agentLabel ??= session.title;
+          session.title = String(a.title);
+        }
         await updateSession(session);
       }
       return ok(text(`Tabs ${tabIds.join(", ")} are in group ${groupId}`));
@@ -367,7 +375,7 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       if (/^file:/i.test(target) && !(await chrome.extension.isAllowedFileSchemeAccess())) {
         throw new Error("Opening local files needs permission: in chrome://extensions open Agent Chrome > Details and turn on \"Allow access to file URLs\".");
       }
-      await gate(target, session.title);
+      await gate(target, agentLabel(session));
       const current = (await chrome.tabs.get(tabId)).url ?? "";
       // The debugger can't attach to chrome:// and similar pages, so navigate those (and away from them) through the tabs API.
       if (RESTRICTED.test(target) || /^file:/i.test(target) || (RESTRICTED.test(current) && !/^about:blank/.test(current))) await chrome.tabs.update(tabId, { url: target });
@@ -391,7 +399,7 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
   async computer(a, { session }) {
     const tabId = await resolveTab(session, a.tabId);
     const tab = await chrome.tabs.get(tabId);
-    await gate(tab.url, session.title);
+    await gate(tab.url, agentLabel(session));
     const mods = a.modifiers ? modifierBits(String(a.modifiers).split("+")) : 0;
     switch (a.action) {
       case "screenshot": {
@@ -512,7 +520,7 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
 
   async read_page(a, { session }) {
     const tabId = await resolveTab(session, a.tabId);
-    await gate((await chrome.tabs.get(tabId)).url, session.title);
+    await gate((await chrome.tabs.get(tabId)).url, agentLabel(session));
     const out = await page.content<string>(tabId, "readPage", a);
     return ok(text(out + dialogNote(tabId)));
   },
@@ -538,13 +546,13 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
 
   async get_page_text(a, { session }) {
     const tabId = await resolveTab(session, a.tabId);
-    await gate((await chrome.tabs.get(tabId)).url, session.title);
+    await gate((await chrome.tabs.get(tabId)).url, agentLabel(session));
     return ok(text(await page.content<string>(tabId, "pageText", { max_chars: a.max_chars })));
   },
 
   async javascript_tool(a, { session }) {
     const tabId = await resolveTab(session, a.tabId);
-    await gate((await chrome.tabs.get(tabId)).url, session.title);
+    await gate((await chrome.tabs.get(tabId)).url, agentLabel(session));
     let r: any;
     const evaluating = cdp.send(tabId, "Runtime.evaluate", {
       expression: String(a.text),
@@ -862,7 +870,7 @@ export async function setSessionPaused(s: SessionState, paused: boolean, reason?
   s.pausedReason = paused ? reason : undefined;
   await updateSession(s);
   for (const t of await groupTabs(s)) {
-    await page.tryContent(t.id!, "overlay", paused ? { state: "paused", label: `${s.title} is paused` } : { state: "hidden" });
+    await page.tryContent(t.id!, "overlay", paused ? { state: "paused", label: `${agentLabel(s)} is paused` } : { state: "hidden" });
     if (paused) await page.tryContent(t.id!, "cursorHide");
   }
 }

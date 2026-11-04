@@ -141,7 +141,7 @@ Any MCP client that speaks Streamable HTTP works. Use `https://<server>/mcp` wit
 <td><img src="docs/media/welcome.png" alt="The welcome page with three setup steps and a pairing-code field"></td>
 </tr>
 <tr>
-<td><b>Every agent gets its own tab group.</b> The popup lists which agents are active, and lets you pause one or stop them all.</td>
+<td><b>Every agent gets its own tab group, named after its task</b> (for example "Fix checkout bug"). The popup lists which agents are active, and lets you pause one or stop them all.</td>
 <td><b>Setup takes a minute.</b> Load the extension, paste the code from the installer, and the profile is connected.</td>
 </tr>
 </table>

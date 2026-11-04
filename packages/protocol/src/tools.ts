@@ -85,6 +85,7 @@ export const TOOLS: ToolDef[] = [
       "Get the tabs in this session's Chrome tab group (id, url, title, active). Returns the tabIds the other tab tools accept. Each agent session gets its own tab group so its work stays separate from the user's tabs. Set createIfEmpty to open a blank tab in a new group when there is none. Set all=true to list every open tab in the browser.",
     inputSchema: obj({
       createIfEmpty: { type: "boolean", description: "Create the group with a new tab if the session has none. Default true." },
+      task: { type: "string", description: "A 2-4 word name for what you are doing, such as \"Fix checkout bug\" or \"Compare flight prices\". Your tab group is renamed to it so the user can tell your tabs apart. Pass it on your first call." },
       all: { type: "boolean", description: "List every tab in the browser, not only this session's group." },
     }),
     annotations: { readOnlyHint: true },
@@ -97,6 +98,7 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({
       url: { type: "string", description: "URL to open. Default about:blank." },
       active: { type: "boolean", description: "Focus the tab in its window. Default false (work happens in the background)." },
+      task: { type: "string", description: "A 2-4 word name for what you are doing, such as \"Fix checkout bug\" or \"Compare flight prices\". Your tab group is renamed to it so the user can tell your tabs apart. Pass it on your first call." },
     }),
   },
   {
