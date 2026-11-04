@@ -440,6 +440,8 @@ export default {
       u.hostname = u.hostname.slice(4);
       return Response.redirect(u.toString(), 301);
     }
-    return providerFor(new URL(request.url).origin).fetch(request, env, ctx);
+    // The OAuth provider owns /.well-known/oauth-protected-resource/* and 404s the bare root path; some clients ask there.
+    if (u.pathname === "/.well-known/oauth-protected-resource") return app.fetch!(request as any, env, ctx);
+    return providerFor(u.origin).fetch(request, env, ctx);
   },
 } satisfies ExportedHandler<Env>;
