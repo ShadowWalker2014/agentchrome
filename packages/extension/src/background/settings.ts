@@ -5,6 +5,8 @@ export interface Settings {
   blockedHosts: string[];
   /** Show the pulsing border and status pill while the agent works. */
   showOverlay: boolean;
+  /** Draw the agent's own cursor gliding to each target. */
+  showCursor: boolean;
 }
 
 export interface Connection {
@@ -15,7 +17,7 @@ export interface Connection {
   name?: string;
 }
 
-const DEFAULTS: Settings = { askNewSites: false, allowedHosts: [], blockedHosts: [], showOverlay: true };
+const DEFAULTS: Settings = { askNewSites: false, allowedHosts: [], blockedHosts: [], showOverlay: true, showCursor: true };
 
 export async function getSettings(): Promise<Settings> {
   const { settings } = await chrome.storage.local.get("settings");

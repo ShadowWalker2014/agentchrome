@@ -129,7 +129,7 @@ export const TOOLS: ToolDef[] = [
       "Use a mouse and keyboard to interact with the page, and take screenshots.",
       "Coordinates are in the pixel space of the latest screenshot of that tab. Take a screenshot first.",
       "Prefer clicking with ref (from read_page or find) over coordinates when you have one.",
-      "Actions: screenshot, left_click, right_click, middle_click, double_click, triple_click, hover, left_click_drag (start_coordinate -> coordinate), type (text), key (text like 'Enter', 'cmd+a', 'ctrl+shift+t'; space-separated for sequences), scroll (scroll_direction, scroll_amount), scroll_to (ref), wait (duration seconds), zoom (region screenshot at full resolution).",
+      "Actions: screenshot, left_click, right_click, middle_click, double_click, triple_click, hover or mouse_move (moves the pointer without clicking), left_click_drag (start_coordinate or start_ref -> coordinate or ref; native HTML5 drag and drop works), type (text), key (text like 'Enter', 'cmd+a', 'ctrl+shift+t'; space-separated for sequences), scroll (scroll_direction, scroll_amount), scroll_to (ref), wait (duration seconds), zoom (region screenshot at full resolution).",
     ].join(" "),
     inputSchema: obj(
       {
@@ -143,6 +143,7 @@ export const TOOLS: ToolDef[] = [
             "double_click",
             "triple_click",
             "hover",
+            "mouse_move",
             "left_click_drag",
             "type",
             "key",
@@ -154,6 +155,7 @@ export const TOOLS: ToolDef[] = [
         },
         coordinate: coord,
         start_coordinate: { ...coord, description: "[x, y] drag start for left_click_drag." },
+        start_ref: { type: "string", description: "Element ref to start a drag from (alternative to start_coordinate)." },
         ref: { type: "string", description: "Element ref from read_page/find, e.g. 'ref_12'. Alternative to coordinate." },
         text: { type: "string", description: "Text to type (type) or keys to press (key)." },
         modifiers: { type: "string", description: "Modifier keys held during a click: ctrl, shift, alt, cmd; combine with '+'." },
@@ -274,28 +276,26 @@ export const TOOLS: ToolDef[] = [
     name: "file_upload",
     title: "Upload files",
     description:
-      "Put files into a file input (by ref), without opening the native file picker. Give each file as base64 content, a URL to fetch, or a screenshot imageId. Do not click file upload buttons: a native picker opens that you cannot see.",
-    inputSchema: obj(
-      {
-        ref: { type: "string" },
-        files: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              mimeType: { type: "string" },
-              base64: { type: "string" },
-              url: { type: "string" },
-              imageId: { type: "string", description: "id returned by a screenshot." },
-            },
-            required: ["name"],
+      "Put files into a file input or a drop zone without the native file picker. Give ref (the file input, its upload button or a drop zone from read_page), or leave ref out to fill a file picker the page just tried to open (click results tell you when). Pass paths (absolute paths on the computer running Chrome; the page gets real files) or files (each with base64, url or a screenshot imageId).",
+    inputSchema: obj({
+      ref: { type: "string", description: "File input, upload button or drop zone. Omit to fill a file picker that a click opened." },
+      paths: { type: "array", items: { type: "string" }, description: "Absolute file paths on the computer running Chrome." },
+      files: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            mimeType: { type: "string" },
+            base64: { type: "string" },
+            url: { type: "string" },
+            imageId: { type: "string", description: "id returned by a screenshot." },
           },
+          required: ["name"],
         },
-        tabId,
       },
-      ["ref", "files"],
-    ),
+      tabId,
+    }),
     timeoutMs: 60_000,
   },
   {
@@ -312,7 +312,7 @@ export const TOOLS: ToolDef[] = [
     name: "record",
     title: "Record video",
     description:
-      "Record a video clip of a tab. action=start begins recording (shows a REC badge), action=stop finishes it and returns a download URL (cloud) or file path (local) for an MP4 or WebM file. action=status reports the current recording. Clicks during recording are highlighted. Max length 10 minutes.",
+      "Record a video clip of a tab. action=start begins, action=stop finishes and returns a download URL (cloud) or file path (local) for an MP4 or WebM file, action=status reports progress. The clip looks like a person using the page: the blue border, status pill and the cursor's name tag are left out, and the cursor is a normal arrow that turns into a hand over links and an I-beam over text (cursor=natural, the default). Use cursor=agent to show the agent cursor and indicators, or cursor=hidden for no cursor. The toolbar icon shows REC meanwhile. Max length 10 minutes.",
     inputSchema: obj(
       {
         action: { type: "string", enum: ["start", "stop", "status"] },
@@ -321,7 +321,8 @@ export const TOOLS: ToolDef[] = [
         format: { type: "string", enum: ["mp4", "webm"], description: "Default mp4 when Chrome supports it." },
         filename: { type: "string" },
         download: { type: "boolean", description: "Also save into the browser's Downloads folder." },
-        showClicks: { type: "boolean", description: "Draw click ripples. Default true." },
+        cursor: { type: "string", enum: ["natural", "agent", "hidden"], description: "How the cursor looks in the clip. Default natural." },
+        showClicks: { type: "boolean", description: "Draw a soft ripple where clicks land. Default false." },
       },
       ["action"],
     ),
@@ -335,6 +336,8 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj(
       {
         action: { type: "string", enum: ["start_recording", "stop_recording", "export", "clear"] },
+        cursor: { type: "string", enum: ["natural", "agent", "hidden"], description: "How the cursor looks in the GIF. Default natural." },
+        showClicks: { type: "boolean", description: "Draw click ripples. Default false." },
         tabId,
         filename: { type: "string" },
         download: { type: "boolean" },

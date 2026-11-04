@@ -3,7 +3,8 @@
 import { WS_SUBPROTOCOL, WS_TOKEN_PREFIX, type ServerToExtension } from "@agent-chrome-mcp/protocol";
 import { getConnection, getSettings, resolvePrompt, setConnection, setSettings } from "./settings";
 import { allSessions, updateSession } from "./sessions";
-import { runTool, setPaused } from "./tools";
+import { runTool, setPaused, setSessionPaused } from "./tools";
+import { onUserCancel } from "./cdp";
 
 const VERSION = chrome.runtime.getManifest().version;
 
@@ -16,6 +17,7 @@ let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 let pingTimer: ReturnType<typeof setInterval> | undefined;
 let activeCalls = 0;
 const inflight = new Map<string, AbortController>();
+const callSession = new Map<string, string>();
 
 function setStatus(s: Status, err = "") {
   status = s;
@@ -115,6 +117,7 @@ async function onMessage(sock: WebSocket, raw: unknown) {
   if (msg.t !== "call") return;
   const ac = new AbortController();
   inflight.set(msg.id, ac);
+  callSession.set(msg.id, msg.session?.id);
   activeCalls++;
   setStatus(status);
   try {
@@ -122,6 +125,7 @@ async function onMessage(sock: WebSocket, raw: unknown) {
     if (sock.readyState === WebSocket.OPEN) sock.send(JSON.stringify({ t: "result", id: msg.id, result }));
   } finally {
     inflight.delete(msg.id);
+    callSession.delete(msg.id);
     activeCalls--;
     setStatus(status);
   }
@@ -196,6 +200,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case "acm:stop-all":
         for (const ac of inflight.values()) ac.abort();
         return { paused: await setPaused(undefined, true) };
+      case "acm:session-pause": {
+        const s = (await allSessions()).find((x) => x.id === msg.id);
+        if (!s) return { ok: false };
+        if (msg.paused) for (const [id, ac] of inflight) if (callSession.get(id) === s.id) ac.abort();
+        await setSessionPaused(s, Boolean(msg.paused));
+        return { ok: true };
+      }
+      case "acm:focus-session": {
+        const s = (await allSessions()).find((x) => x.id === msg.id);
+        const tabId = s?.currentTabId;
+        const tab = tabId !== undefined ? await chrome.tabs.get(tabId).catch(() => null) : null;
+        if (!tab) return { ok: false };
+        await chrome.tabs.update(tab.id!, { active: true });
+        await chrome.windows.update(tab.windowId, { focused: true });
+        if (s?.groupId !== undefined) await chrome.tabGroups.update(s.groupId, { collapsed: false }).catch(() => {});
+        return { ok: true };
+      }
       case "acm:forget-session": {
         const list = await allSessions();
         const s = list.find((x) => x.id === msg.id);
@@ -214,6 +235,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return undefined;
   })().then(sendResponse, (e) => sendResponse({ error: String(e?.message ?? e) }));
   return true;
+});
+
+// The debugging bar's Cancel button detaches every tab: treat it like Stop all.
+onUserCancel(() => {
+  for (const ac of inflight.values()) ac.abort();
+  setPaused(undefined, true, "debugger");
 });
 
 // ---------------- lifecycle ----------------

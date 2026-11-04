@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Edge Cases</title>
+<style>
+body{font-family:system-ui;margin:24px}
+.row{display:flex;gap:16px;margin:12px 0;align-items:center}
+#card{width:120px;padding:10px;background:#eef;border:1px solid #99c;cursor:grab}
+#zone{width:200px;height:80px;border:2px dashed #999;display:grid;place-items:center}
+#slider{position:relative;width:300px;height:8px;background:#ddd;border-radius:4px}
+#knob{position:absolute;left:0;top:-8px;width:24px;height:24px;border-radius:50%;background:#36f}
+#dropfiles{width:220px;height:70px;border:2px dashed #36f;display:grid;place-items:center}
+#hiddenInput{display:none}
+.fancy{padding:8px 14px;background:#36f;color:#fff;border-radius:8px;cursor:pointer}
+</style></head>
+<body>
+<h1>Edge Cases</h1>
+<div class="row"><div id="card" draggable="true">Drag me</div><div id="zone">Drop here</div><span id="dndOut"></span></div>
+<div class="row"><div id="slider"><div id="knob"></div></div><span id="sliderOut">0</span></div>
+<div class="row"><label class="fancy" id="fancyUpload" role="button" onclick="document.getElementById('hiddenInput').click()">Upload avatar</label>
+  <input id="hiddenInput" type="file" accept="image/*,.txt" onchange="document.getElementById('upOut').textContent=[...this.files].map(f=>f.name+':'+f.size).join(',')">
+  <span id="upOut"></span></div>
+<div class="row"><input id="multi" type="file" multiple aria-label="Attachments" onchange="document.getElementById('multiOut').textContent=[...this.files].map(f=>f.name).join(',')"><span id="multiOut"></span></div>
+<div class="row"><div id="dropfiles" aria-label="Drop files">Drop files</div><span id="dropOut"></span></div>
+<div class="row"><a href="/second" target="_blank" id="newtab">Open in new tab</a> <a href="/file.txt" download id="dl">Download report</a>
+  <button id="promptBtn" onclick="document.getElementById('promptOut').textContent = prompt('Your name?', 'x')">Ask name</button><span id="promptOut"></span></div>
+<script>
+const card = document.getElementById('card'), zone = document.getElementById('zone');
+card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', 'card-1'));
+zone.addEventListener('dragover', e => e.preventDefault());
+zone.addEventListener('drop', e => { e.preventDefault(); document.getElementById('dndOut').textContent = 'dropped:' + e.dataTransfer.getData('text/plain'); });
+const knob = document.getElementById('knob'), slider = document.getElementById('slider');
+let down = false;
+knob.addEventListener('pointerdown', e => { down = true; knob.setPointerCapture(e.pointerId); });
+knob.addEventListener('pointermove', e => { if (!down) return; const r = slider.getBoundingClientRect(); const x = Math.max(0, Math.min(r.width, e.clientX - r.left)); knob.style.left = (x - 12) + 'px'; document.getElementById('sliderOut').textContent = Math.round(x / r.width * 100); });
+knob.addEventListener('pointerup', () => down = false);
+const dz = document.getElementById('dropfiles');
+dz.addEventListener('dragover', e => e.preventDefault());
+dz.addEventListener('drop', e => { e.preventDefault(); document.getElementById('dropOut').textContent = [...e.dataTransfer.files].map(f => f.name + ':' + f.size).join(','); });
+</script>
+</body></html>

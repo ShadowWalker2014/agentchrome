@@ -1,14 +1,66 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Welcome · Agent Chrome MCP</title><link rel="stylesheet" href="popup.css"></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome · Agent Chrome</title><link rel="icon" href="icons/icon32.png"><link rel="stylesheet" href="popup.css"><link rel="stylesheet" href="welcome.css"></head>
 <body class="welcome">
+<div class="glow"></div>
 <main>
-  <header class="brand big"><img src="icons/logo.svg" width="48" height="48" alt=""><div><strong>Agent Chrome MCP</strong><div class="muted">Your real Chrome, for every coding agent</div></div></header>
-  <h1>Pair this Chrome profile</h1>
-  <ol>
-    <li>In a terminal, run <code>agent-chrome-mcp pair</code> (or <code>npx agent-chrome-mcp pair</code>). It prints a code like <code>ABCDE-FGHJK</code>.</li>
-    <li>Click the <strong>Agent Chrome MCP</strong> icon in the toolbar (pin it from the puzzle-piece menu), paste the code and press <strong>Connect</strong>.</li>
-    <li>Ask your agent to "open example.com in Chrome". Its tabs appear in their own tab group with a glowing border while it works.</li>
-  </ol>
-  <p class="muted">Repeat in every Chrome profile you want agents to use. Each profile shows up as its own browser in <code>list_browsers</code>.</p>
+  <header class="wtop"><img src="icons/logo.svg" width="28" height="28" alt=""><span>Agent Chrome</span><span id="status" class="status"><i></i><span id="statusText">Not connected</span></span></header>
+
+  <section id="setup">
+    <div class="intro">
+      <h1>Let your coding agents use this Chrome.</h1>
+      <p class="muted lead">Connect this profile once. Claude Code, Codex, Gemini, Grok, Muse and other agents then work in their own tab groups here, with a blue border while they act.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step" id="s1">
+        <span class="num">1</span>
+        <div class="body">
+          <h3>Pin the extension</h3>
+          <p class="muted">Click <span class="kbd"><svg viewBox="0 0 24 24" width="13" height="13"><path d="M10 3.5a2 2 0 0 1 4 0V5h3a1 1 0 0 1 1 1v3h-1.5a2 2 0 0 0 0 4H18v4a1 1 0 0 1-1 1h-4v-1.5a2 2 0 0 0-4 0V18H6a1 1 0 0 1-1-1v-4h1.5a2 2 0 0 0 0-4H5V6a1 1 0 0 1 1-1h4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span> in the toolbar, then the pin next to <b>Agent Chrome</b>, so you can always see its status and stop agents.</p>
+        </div>
+      </li>
+      <li class="step" id="s2">
+        <span class="num">2</span>
+        <div class="body">
+          <h3>Get a pairing code</h3>
+          <p class="muted">In a terminal, run this. It also adds the server to every agent on your machine.</p>
+          <button class="cmdline" id="copyCmd" type="button"><span><b>$</b> npx agent-chrome-mcp setup</span><span class="copy" id="copyLabel">Copy</span></button>
+          <p class="muted small">Already set up? Run <code>agent-chrome-mcp pair</code> for a new code.</p>
+        </div>
+      </li>
+      <li class="step" id="s3">
+        <span class="num">3</span>
+        <div class="body">
+          <h3>Paste it here</h3>
+          <form id="pairForm" class="pairrow" autocomplete="off">
+            <input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" aria-label="Pairing code" required>
+            <input id="pname" class="pname" placeholder="Profile name, e.g. Work" maxlength="60" aria-label="Profile name">
+            <button id="pair" class="btn primary" type="submit">Connect</button>
+          </form>
+          <details id="serverBox"><summary>Server <span id="serverShort" class="mono muted"></span></summary><input id="server" class="mono" spellcheck="false" aria-label="Server URL"><p class="hint">Your own deployment, or <code>http://127.0.0.1:47823</code> in local mode.</p></details>
+          <div id="pairError" class="alert" role="alert" hidden></div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="done" hidden>
+    <div class="success">
+      <div class="check"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M6 12.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h1><span id="doneName">This profile</span> is connected.</h1>
+      <p class="muted lead">Ask any agent to use it. Try:</p>
+      <button class="cmdline prompt" id="copyPrompt" type="button"><span>Use agent-chrome to open news.ycombinator.com and take a screenshot</span><span class="copy">Copy</span></button>
+      <div class="tips">
+        <div><b>Your tabs stay yours.</b><span class="muted">Each agent works in its own named tab group.</span></div>
+        <div><b>You're in control.</b><span class="muted">Press Stop on the page, or Stop all in the toolbar popup.</span></div>
+        <div><b>More profiles?</b><span class="muted">Load the extension there and run <code>agent-chrome-mcp pair</code>.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wfoot"><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp" target="_blank" rel="noopener">GitHub</a><span class="dot-sep"></span><a id="docs" href="#" target="_blank" rel="noopener">Docs</a><span class="dot-sep"></span><span>Open source, MIT</span></footer>
 </main>
+<div id="toast" class="toast" role="status"></div>
+<script src="welcome.js" type="module"></script>
 </body></html>

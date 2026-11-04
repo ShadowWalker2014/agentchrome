@@ -1,40 +1,28 @@
 // Each MCP session owns one Chrome tab group per browser profile. State lives in storage.session
 // so it survives service-worker restarts but not a browser restart.
 
-import type { SessionInfo } from "@agent-chrome-mcp/protocol";
+import { agentFor, type SessionInfo } from "@agent-chrome-mcp/protocol";
 
 export interface SessionState {
   id: string;
   client: string;
+  /** Icon key of the agent (claude, codex, gemini, …) or "" when unknown. */
+  agent: string;
   title: string;
   color: `${chrome.tabGroups.Color}`;
   groupId?: number;
   windowId?: number;
   currentTabId?: number;
   paused?: boolean;
+  /** "stop" (Stop button) or "debugger" (Cancel on Chrome's debugging bar). */
+  pausedReason?: string;
   lastActive: number;
 }
 
 const COLORS: `${chrome.tabGroups.Color}`[] = ["blue", "cyan", "purple", "green", "orange", "pink", "yellow", "red"];
 
-const KNOWN_CLIENTS: [RegExp, string][] = [
-  [/claude/i, "Claude Code"],
-  [/codex/i, "Codex"],
-  [/gemini/i, "Gemini"],
-  [/antigravity|agy/i, "Antigravity"],
-  [/grok/i, "Grok"],
-  [/muse/i, "Muse"],
-  [/cursor/i, "Cursor"],
-  [/opencode/i, "opencode"],
-  [/windsurf|cascade/i, "Windsurf"],
-  [/vscode|copilot/i, "Copilot"],
-  [/mcp-inspector|inspector/i, "Inspector"],
-];
-
 export function prettyClient(client: string): string {
-  for (const [re, name] of KNOWN_CLIENTS) if (re.test(client)) return name;
-  const base = client.replace(/[-_]?(mcp)?[-_]?client$/i, "").replace(/[-_]+/g, " ").trim() || "Agent";
-  return base.replace(/\b\w/g, (c) => c.toUpperCase());
+  return agentFor(client).name;
 }
 
 let cache: Record<string, SessionState> | null = null;
@@ -57,6 +45,7 @@ export async function getSession(info: SessionInfo): Promise<SessionState> {
     s = {
       id: info.id,
       client: info.client,
+      agent: agentFor(info.client).key,
       title: sameClient ? `${pretty} ${sameClient + 1}` : pretty,
       color: COLORS[Object.keys(all).length % COLORS.length]!,
       lastActive: Date.now(),

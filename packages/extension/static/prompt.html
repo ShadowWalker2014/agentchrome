@@ -1,13 +1,12 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Allow site? · Agent Chrome MCP</title><link rel="stylesheet" href="popup.css"></head>
+<html lang="en"><head><meta charset="utf-8"><title>Allow site? · Agent Chrome</title><link rel="stylesheet" href="popup.css"></head>
 <body class="prompt">
-  <header class="brand"><img src="icons/logo.svg" width="28" height="28" alt=""><strong>Agent Chrome MCP</strong></header>
-  <h1 id="title">Allow access?</h1>
+  <div class="site"><div class="favicon"><img id="fav" alt=""></div><div><div class="muted small" id="who"></div><h1 id="title">Allow access?</h1></div></div>
   <p id="desc" class="muted"></p>
-  <div class="actions col">
-    <button class="primary" data-a="once">Allow once</button>
-    <button data-a="always">Always allow this site</button>
-    <button class="danger" data-a="deny">Decline</button>
+  <div class="actions">
+    <button class="btn primary block" data-a="once" autofocus>Allow this time</button>
+    <button class="btn block" data-a="always">Always allow this site</button>
+    <button class="btn danger block" data-a="deny">Don't allow</button>
   </div>
   <script src="prompt.js" type="module"></script>
 </body></html>

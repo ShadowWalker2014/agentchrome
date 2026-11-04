@@ -9,6 +9,8 @@ interface Rec {
   kind: "video" | "gif";
   since: number;
   showClicks: boolean;
+  /** How the cursor looks in the clip: natural (normal arrow/hand/I-beam), agent (blue with name tag) or hidden. */
+  cursor: "natural" | "agent" | "hidden";
   stopListen: () => void;
 }
 
@@ -27,7 +29,7 @@ const toOffscreen = <T = any>(msg: Record<string, unknown>) => chrome.runtime.se
 
 export const recordingOf = (tabId: number) => recs.get(tabId);
 
-export async function startRecording(tabId: number, opts: { kind: "video" | "gif"; fps?: number; format?: string; showClicks?: boolean }) {
+export async function startRecording(tabId: number, opts: { kind: "video" | "gif"; fps?: number; format?: string; showClicks?: boolean; cursor?: "natural" | "agent" | "hidden" }) {
   if (recs.has(tabId)) throw new Error("This tab is already recording. Stop it first.");
   await ensureOffscreen();
   const recId = crypto.randomUUID();
@@ -50,8 +52,10 @@ export async function startRecording(tabId: number, opts: { kind: "video" | "gif
   });
   // Nudge a first frame even on a static page.
   cdp.send(tabId, "Runtime.evaluate", { expression: "document.body && (document.body.style.outline = document.body.style.outline)" }).catch(() => {});
-  const rec: Rec = { recId, kind: opts.kind, since: Date.now(), showClicks: opts.showClicks !== false, stopListen };
+  const rec: Rec = { recId, kind: opts.kind, since: Date.now(), showClicks: opts.showClicks === true, cursor: opts.cursor ?? "natural", stopListen };
   recs.set(tabId, rec);
+  chrome.action.setBadgeText({ tabId, text: "REC" }).catch(() => {});
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#E5484D" }).catch(() => {});
   // Hard cap: 10 minutes.
   setTimeout(() => {
     if (recs.get(tabId)?.recId === recId) stopRecording(tabId, {}).catch(() => {});
@@ -80,6 +84,7 @@ export async function stopRecording(tabId: number, opts: { filename?: string; do
   const rec = recs.get(tabId);
   if (!rec) throw new Error("This tab is not recording.");
   recs.delete(tabId);
+  chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
   rec.stopListen();
   await cdp.send(tabId, "Page.stopScreencast").catch(() => {});
   const conn = await getConnection();
@@ -108,4 +113,11 @@ export function isRecording(tabId: number) {
 
 export function recordingSince(tabId: number) {
   return recs.get(tabId)?.since;
+}
+
+/** In-page presentation while a tab is recording: no border, pill or name tag; cursor per the recording's choice. */
+export function presentationOf(tabId: number): { clean: boolean; skin: "agent" | "natural" | "hidden" } {
+  const r = recs.get(tabId);
+  if (!r) return { clean: false, skin: "agent" };
+  return { clean: r.cursor !== "agent", skin: r.cursor };
 }

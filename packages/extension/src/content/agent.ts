@@ -1,3 +1,4 @@
+import { AGENT_ICONS } from "@agent-chrome-mcp/protocol";
 // Injected on demand into the isolated world of a tab. Globals persist for the lifetime of the page,
 // so element refs stay stable between calls until the page navigates.
 
@@ -454,14 +455,21 @@ declare global {
       .rec .dot{background:#FF453A}.rec .dot::after{background:rgba(255,69,58,.35)}
       .paused .dot{background:#A1A1AA}.paused .dot::after{animation:none;opacity:0}
       @keyframes halo{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.8);opacity:0}}
+      .ag{display:none;position:relative;box-sizing:border-box;width:24px;height:24px;margin-left:-8px;border-radius:7px;background:#fff;color:#0A0A0B;flex:none;place-items:center;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+      .ag.on{display:grid}
+      .ag svg{display:block;width:15px;height:15px}
+      .ag.on~.label{margin-left:-1px}
+      .pill.has-ag .dot{position:absolute;left:25px;top:25px;width:8px;height:8px;box-shadow:0 0 0 2px rgba(14,14,16,1);z-index:1}
+      .pill.has-ag .dot::after{inset:-3px}
       .rec-time{font-variant-numeric:tabular-nums;color:#A1A1AA;font-size:12px}
       .rec-time:empty{display:none}
       button{all:unset;cursor:pointer;height:26px;padding:0 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#FAFAFA;font-weight:500;font-size:12px;display:inline-flex;align-items:center;
         box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;transition:background .15s}
       button:hover{background:rgba(255,255,255,.16)}
+      :host([data-clean]) .frame,:host([data-clean]) .pill,:host([data-clean]) .ripple{display:none!important}
       .ripple{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #2F6BFF;background:rgba(47,107,255,.18);pointer-events:none;animation:rip .55s cubic-bezier(.2,.8,.2,1) forwards}
       @keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.7);opacity:0}}
-    </style><div class="frame"></div><div class="pill"><span class="dot"></span><span class="label"></span><span class="rec-time"></span><button class="stop">Stop</button></div>`;
+    </style><div class="frame"></div><div class="pill"><span class="dot"></span><span class="ag"></span><span class="label"></span><span class="rec-time"></span><button class="stop">Stop</button></div>`;
     shadow.querySelector(".stop")!.addEventListener("click", (e) => {
       e.stopPropagation();
       const paused = shadow!.querySelector(".pill")!.classList.contains("paused");
@@ -471,8 +479,15 @@ declare global {
     return shadow;
   }
 
-  function overlay(args: { state: "working" | "idle" | "hidden" | "paused"; label?: string; rec?: { since: number } | null; linger?: number }) {
+  function setClean(on: boolean) {
+    if (!host) return;
+    if (on) host.setAttribute("data-clean", "");
+    else host.removeAttribute("data-clean");
+  }
+
+  function overlay(args: { state: "working" | "idle" | "hidden" | "paused"; label?: string; agent?: string; clean?: boolean; skin?: string; rec?: { since: number } | null; linger?: number }) {
     const sh = ensureOverlay();
+    setClean(Boolean(args.clean));
     const frame = sh.querySelector(".frame")!;
     const pill = sh.querySelector(".pill")!;
     const label = sh.querySelector(".label")!;
@@ -498,6 +513,14 @@ declare global {
       return true;
     }
     label.textContent = args.label ?? "Agent is working";
+    const ag = sh.querySelector(".ag") as HTMLSpanElement;
+    const icon = args.agent ? AGENT_ICONS[args.agent] : undefined;
+    ag.classList.toggle("on", Boolean(icon));
+    pill.classList.toggle("has-ag", Boolean(icon));
+    if (icon && ag.dataset.k !== args.agent) {
+      ag.innerHTML = icon;
+      ag.dataset.k = args.agent;
+    }
     btn.textContent = args.state === "paused" ? "Resume" : "Stop";
     if (args.state === "working" || args.state === "paused") {
       frame.classList.toggle("on", args.state === "working");
@@ -519,12 +542,170 @@ declare global {
 
   function ripple(args: { x: number; y: number }) {
     const sh = ensureOverlay();
+    if (host?.hasAttribute("data-clean")) return true;
     const r = document.createElement("div");
     r.className = "ripple";
     r.style.left = `${args.x}px`;
     r.style.top = `${args.y}px`;
     sh.appendChild(r);
     setTimeout(() => r.remove(), 700);
+    return true;
+  }
+
+
+  // ---------------- agent cursor (Codex-style): glides to each target, never touches the real mouse ----------------
+  const ARROW = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5.5 3.2v15.6c0 .7.8 1 1.3.5l3.6-3.5 2.7 6c.2.4.7.6 1.1.4l2-.9c.4-.2.6-.7.4-1.1l-2.7-5.9h5.2c.7 0 1-.8.5-1.3L6.8 2.7c-.5-.5-1.3-.2-1.3.5z" fill="#2F6BFF" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  const HAND = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 11.5V4.8a1.6 1.6 0 0 1 3.2 0v5.4l.2-.9a1.5 1.5 0 0 1 3 .3v.9a1.5 1.5 0 0 1 3 .2v.8a1.5 1.5 0 0 1 3 .3v4.4c0 3.3-2.4 6.3-6 6.3h-1.6c-2 0-3.4-.8-4.6-2.3l-3.4-4.3a1.6 1.6 0 0 1 2.4-2.1z" fill="#2F6BFF" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  const BEAM = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 3.5h2c.6 0 1 .4 1 1 0-.6.4-1 1-1h2M12 4.5v15M9 20.5h2c.6 0 1-.4 1-1 0 .6.4 1 1 1h2" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M9 3.5h2c.6 0 1 .4 1 1 0-.6.4-1 1-1h2M12 4.5v15M9 20.5h2c.6 0 1-.4 1-1 0 .6.4 1 1 1h2" fill="none" stroke="#2F6BFF" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  // Natural skins: what a person's own cursor looks like, for clean recordings.
+  const N_ARROW = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M5.5 3.2v15.6c0 .7.8 1 1.3.5l3.6-3.5 2.7 6c.2.4.7.6 1.1.4l2-.9c.4-.2.6-.7.4-1.1l-2.7-5.9h5.2c.7 0 1-.8.5-1.3L6.8 2.7c-.5-.5-1.3-.2-1.3.5z" fill="#000" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  const N_HAND = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 11.5V4.8a1.6 1.6 0 0 1 3.2 0v5.4l.2-.9a1.5 1.5 0 0 1 3 .3v.9a1.5 1.5 0 0 1 3 .2v.8a1.5 1.5 0 0 1 3 .3v4.4c0 3.3-2.4 6.3-6 6.3h-1.6c-2 0-3.4-.8-4.6-2.3l-3.4-4.3a1.6 1.6 0 0 1 2.4-2.1z" fill="#fff" stroke="#000" stroke-width="1.3" stroke-linejoin="round"/><path d="M12.2 10.5v4M15.4 11v3.5M18.4 11.5v3" stroke="#000" stroke-width="1.1" stroke-linecap="round"/></svg>';
+  const N_BEAM = '<svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 3.5h2c.6 0 1 .4 1 1 0-.6.4-1 1-1h2M12 4.5v15M9 20.5h2c.6 0 1-.4 1-1 0 .6.4 1 1 1h2" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><path d="M9 3.5h2c.6 0 1 .4 1 1 0-.6.4-1 1-1h2M12 4.5v15M9 20.5h2c.6 0 1-.4 1-1 0 .6.4 1 1 1h2" fill="none" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  let skin: string = "agent";
+
+  let cur: { el: HTMLDivElement; icon: HTMLDivElement; tag: HTMLDivElement; x: number; y: number; kind: string } | null = null;
+  let curIdle: ReturnType<typeof setTimeout> | undefined;
+
+  function ensureCursor(label: string, agent?: string) {
+    const sh = ensureOverlay();
+    if (!cur || !cur.el.isConnected) {
+      const style = document.createElement("style");
+      style.textContent = `
+        .acur{position:fixed;left:0;top:0;width:24px;height:24px;pointer-events:none;opacity:0;will-change:transform;transition:opacity .25s ease;filter:drop-shadow(0 2px 6px rgba(47,107,255,.45)) drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+        .acur.on{opacity:1}
+        .acur .ic{position:absolute;inset:0;transform-origin:5px 3px;transition:transform .12s cubic-bezier(.2,.8,.2,1)}
+        .acur .ic.hand{transform-origin:10px 4px}.acur .ic.text{transform-origin:12px 12px}
+        .acur.down .ic{transform:scale(.82)}
+        .acur .tg{position:absolute;left:20px;top:20px;display:flex;align-items:center;gap:6px;box-sizing:border-box;height:23px;padding:0 9px;border-radius:7px 999px 999px 999px;background:#2F6BFF;color:#fff;white-space:nowrap;
+          font:600 11.5px/1.25 "Inter","SF Pro Text",ui-sans-serif,system-ui,-apple-system,sans-serif;letter-spacing:-.01em;box-shadow:0 0 0 1.5px #fff,0 4px 12px -2px rgba(47,107,255,.5)}
+        .acur .tg i{display:grid;place-items:center;box-sizing:border-box;width:17px;height:17px;margin:-1px 0 -1px -5px;border-radius:5px;background:#fff;color:#0A0A0B;flex:none}
+        .acur .tg i svg{display:block;width:12px;height:12px}
+        .acur.grab .ic{transform:scale(.92)}
+        .acur.natural{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.35))}
+        .acur.natural .tg{display:none}
+        .acur.hidden-skin{display:none}`;
+      sh.appendChild(style);
+      const el = document.createElement("div");
+      el.className = "acur";
+      el.setAttribute("aria-hidden", "true");
+      const icon = document.createElement("div");
+      icon.className = "ic";
+      const tag = document.createElement("div");
+      tag.className = "tg";
+      el.append(icon, tag);
+      sh.appendChild(el);
+      cur = { el, icon, tag, x: innerWidth * 0.62, y: innerHeight * 0.55, kind: "" };
+      el.style.transform = `translate(${cur.x - 5}px, ${cur.y - 3}px)`;
+    }
+    const icon = agent ? AGENT_ICONS[agent] : undefined;
+    const key = `${agent ?? ""}|${label}`;
+    if (cur.tag.dataset.k !== key) {
+      cur.tag.dataset.k = key;
+      cur.tag.innerHTML = icon ? `<i>${icon}</i>` : "";
+      cur.tag.append(document.createTextNode(label));
+    }
+    return cur;
+  }
+
+  function cursorKind(x: number, y: number): "arrow" | "hand" | "text" {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return "arrow";
+    const c = getComputedStyle(el).cursor;
+    if (c === "pointer") return "hand";
+    if (c === "text" || c === "vertical-text") return "text";
+    if (c === "auto" || c === "default") {
+      if (el.closest("a[href],button,summary,label,select,[role=button],[role=link],[role=tab],[role=menuitem],[role=option],[role=checkbox],[role=switch]")) return "hand";
+      if (el.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=range]):not([type=file]),textarea,[contenteditable=""],[contenteditable=true]')) return "text";
+    }
+    return "arrow";
+  }
+
+  function setKind(c: NonNullable<typeof cur>, kind: string) {
+    if (c.kind === `${skin}:${kind}`) return;
+    c.kind = `${skin}:${kind}`;
+    c.icon.className = `ic ${kind}`;
+    const nat = skin === "natural";
+    c.icon.innerHTML = kind === "hand" ? (nat ? N_HAND : HAND) : kind === "text" ? (nat ? N_BEAM : BEAM) : nat ? N_ARROW : ARROW;
+    // Hotspot: arrow tip (5,3), fingertip (10,4), I-beam centre (12,12).
+    c.el.dataset.hx = kind === "hand" ? "10" : kind === "text" ? "12" : "5";
+    c.el.dataset.hy = kind === "hand" ? "4" : kind === "text" ? "12" : "3";
+  }
+
+  const place = (c: NonNullable<typeof cur>, x: number, y: number, rot = 0, sx = 1) => {
+    c.el.style.transform = `translate(${x - Number(c.el.dataset.hx ?? 5)}px, ${y - Number(c.el.dataset.hy ?? 3)}px) rotate(${rot}deg) scale(${sx})`;
+  };
+
+  async function cursorTo(args: { x: number; y: number; label?: string; agent?: string; press?: boolean; grab?: boolean; durationMs?: number; skin?: string }) {
+    skin = args.skin ?? "agent";
+    const c = ensureCursor(args.label ?? "Agent", args.agent);
+    // Natural skin: no name tag and no blue glow, so recordings look like a person's screen.
+    c.el.classList.toggle("natural", skin === "natural");
+    c.el.classList.toggle("hidden-skin", skin === "hidden");
+    setClean(skin !== "agent");
+    clearTimeout(curIdle);
+    curIdle = setTimeout(() => c.el.classList.remove("on"), 15_000);
+    const wasOn = c.el.classList.contains("on");
+    c.el.classList.toggle("grab", Boolean(args.grab));
+    if (args.grab) setKind(c, "hand");
+    c.el.classList.add("on");
+    const fromX = c.x;
+    const fromY = c.y;
+    const dx = args.x - fromX;
+    const dy = args.y - fromY;
+    const dist = Math.hypot(dx, dy);
+    const visible = document.visibilityState === "visible";
+    if (!visible || dist < 2 || !wasOn) {
+      // Jump when hidden (no reason to wait) or when the cursor first appears.
+      if (!args.grab) setKind(c, cursorKind(args.x, args.y));
+      if (!wasOn && visible && dist >= 2) {
+        place(c, args.x - Math.sign(dx || 1) * 40, args.y - Math.sign(dy || 1) * 30);
+        await new Promise((r) => requestAnimationFrame(r));
+        c.x = args.x - Math.sign(dx || 1) * 40;
+        c.y = args.y - Math.sign(dy || 1) * 30;
+        return cursorTo(args);
+      }
+      c.x = args.x;
+      c.y = args.y;
+      place(c, c.x, c.y);
+    } else {
+      const dur = args.durationMs ?? Math.min(420, Math.max(160, 140 + dist * 0.38));
+      // Bend the path a little, like a hand moving a mouse.
+      const bend = Math.min(60, dist * 0.18) * (dx >= 0 ? -1 : 1);
+      const cx = fromX + dx / 2 - (dy / (dist || 1)) * bend;
+      const cy = fromY + dy / 2 + (dx / (dist || 1)) * bend;
+      const tilt = Math.max(-12, Math.min(12, dx / 25));
+      const start = performance.now();
+      await new Promise<void>((resolve) => {
+        const step = (now: number) => {
+          const t = Math.min(1, (now - start) / dur);
+          const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          const u = 1 - e;
+          const x = u * u * fromX + 2 * u * e * cx + e * e * args.x;
+          const y = u * u * fromY + 2 * u * e * cy + e * e * args.y;
+          const s = Math.sin(Math.PI * t);
+          if (t > 0.6 && !args.grab) setKind(c, cursorKind(args.x, args.y));
+          place(c, x, y, tilt * s, 1 - 0.06 * s);
+          c.x = x;
+          c.y = y;
+          if (t < 1) requestAnimationFrame(step);
+          else resolve();
+        };
+        requestAnimationFrame(step);
+      });
+      c.x = args.x;
+      c.y = args.y;
+      if (!args.grab) setKind(c, cursorKind(args.x, args.y));
+      place(c, c.x, c.y);
+    }
+    if (args.press) {
+      c.el.classList.add("down");
+      setTimeout(() => c.el.classList.remove("down"), 140);
+    }
+    return true;
+  }
+
+  function cursorHide() {
+    if (cur) cur.el.classList.remove("on");
     return true;
   }
 
@@ -539,8 +720,26 @@ declare global {
     return { ref: refOf(el), tag: el.tagName.toLowerCase(), role, name: nameOf(el, role) || clean((el as HTMLElement).innerText, 60) };
   }
 
+  function markUpload(args: { ref: string }) {
+    const el = elOf(args.ref);
+    const isFile = (x: Element | null | undefined): x is HTMLInputElement => x instanceof HTMLInputElement && x.type === "file";
+    const label = el instanceof HTMLLabelElement ? el : el.closest("label");
+    const target: Element =
+      (isFile(el) && el) ||
+      (label && isFile(label.control) && label.control) ||
+      (el.querySelector('input[type="file"]') as HTMLInputElement | null) ||
+      // Styled upload buttons usually sit next to a hidden input.
+      (el.parentElement?.querySelector('input[type="file"]') as HTMLInputElement | null) ||
+      el;
+    const token = Math.random().toString(36).slice(2);
+    target.setAttribute("data-acm-up", token);
+    setTimeout(() => target.removeAttribute("data-acm-up"), 10_000);
+    const isInput = target instanceof HTMLInputElement && target.type === "file";
+    return { token, isInput, multiple: isInput && (target as HTMLInputElement).multiple, accept: isInput ? (target as HTMLInputElement).accept : "" };
+  }
+
   const fns: Record<string, (a: any) => any> = {
-    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt,
+    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt, cursorTo, cursorHide, markUpload,
     ping: () => true,
   };
 

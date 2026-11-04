@@ -1,0 +1,45 @@
+body.welcome{min-height:100vh;font-size:14.5px;background:var(--bg2);overflow-x:hidden}
+@media (prefers-color-scheme:dark){body.welcome{background:#0A0A0B}}
+.glow{position:fixed;left:50%;top:-320px;width:1100px;height:620px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(47,107,255,.16),transparent);pointer-events:none}
+.welcome main{position:relative;max-width:680px;margin:0 auto;padding:28px 24px 48px}
+.wtop{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.02em;margin-bottom:56px}
+.wtop img{border-radius:8px}
+.intro h1{font-size:34px;line-height:1.1;letter-spacing:-.035em;margin:0 0 12px;font-weight:600}
+.lead{font-size:15.5px;line-height:1.55;margin:0;max-width:560px}
+.steps{list-style:none;padding:0;margin:36px 0 0;display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:16px;padding:20px;border-radius:14px;background:var(--bg);box-shadow:0 1px 2px rgba(10,10,11,.04),0 0 0 1px var(--line)}
+.step .num{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:600;background:var(--bg2);box-shadow:inset 0 0 0 1px var(--line2);color:var(--muted)}
+.step.active .num{background:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-soft)}
+.step .body{flex:1;min-width:0}
+.step h3{margin:2px 0 4px;font-size:15px;font-weight:600;letter-spacing:-.015em}
+.step p{margin:0 0 10px}.step p:last-child{margin-bottom:0}
+.kbd{display:inline-grid;place-items:center;width:22px;height:20px;border-radius:5px;background:var(--bg2);box-shadow:inset 0 0 0 1px var(--line2);vertical-align:-4px;color:var(--fg)}
+.cmdline{display:flex;align-items:center;width:100%;gap:12px;height:44px;padding:0 6px 0 14px;margin:0 0 10px;border-radius:10px;border:0;background:#0E0E10;color:#F4F4F5;font:13px var(--mono);cursor:pointer;text-align:left;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.cmdline span:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmdline b{color:#6E6E76;font-weight:400;margin-right:6px}
+.cmdline .copy{flex:none;height:32px;display:inline-flex;align-items:center;padding:0 12px;border-radius:7px;background:rgba(255,255,255,.08);font:500 12.5px var(--font);color:#F4F4F5}
+.cmdline:hover .copy{background:rgba(255,255,255,.14)}
+.cmdline.prompt{font-family:var(--font);font-size:14px;height:48px;margin-top:6px}
+.step code,.tips code{font-size:12px;background:var(--hover);box-shadow:inset 0 0 0 1px var(--line);padding:1px 6px;border-radius:5px}
+.pairrow{display:flex;gap:8px;margin:4px 0 10px}
+.pairrow .code{width:190px;flex:none;height:44px;font-size:17px;letter-spacing:.12em}
+.pairrow .pname{flex:1;height:44px}
+.pairrow .btn{height:44px;padding:0 18px}
+.welcome #serverBox{margin-top:2px}
+.welcome #serverBox input{max-width:420px}
+.welcome .alert{margin-top:10px}
+.success{text-align:center;padding:24px 0 8px}
+.check{width:56px;height:56px;margin:0 auto 22px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(180deg,#4C82FF,#1F55F0);box-shadow:0 10px 30px -8px rgba(47,107,255,.6),inset 0 1px 0 rgba(255,255,255,.25);animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.success h1{font-size:30px;letter-spacing:-.03em;margin:0 0 10px;font-weight:600}
+.success .lead{margin:0 auto 16px}
+.success .cmdline{max-width:560px;margin:0 auto}
+.tips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:36px;text-align:left}
+.tips div{padding:16px;border-radius:12px;background:var(--bg);box-shadow:0 0 0 1px var(--line)}
+.tips b{display:block;font-weight:600;font-size:13.5px;margin-bottom:4px}
+.tips span{font-size:13px}
+.wfoot{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:48px;font-size:12.5px;color:var(--subtle)}
+.wfoot a{text-decoration:none}.wfoot a:hover{color:var(--fg)}
+@media (max-width:620px){.pairrow{flex-wrap:wrap}.pairrow .code{width:100%}.tips{grid-template-columns:1fr}.intro h1{font-size:28px}}
+.cmdline.prompt{height:auto;min-height:48px;padding:8px 6px 8px 16px}
+.cmdline.prompt span:first-child{white-space:normal;line-height:1.4}

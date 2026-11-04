@@ -15,7 +15,7 @@ mkdirSync(join(out, "icons"), { recursive: true });
 
 const common = { bundle: true, target: "chrome120", format: "esm", minify: false, sourcemap: false, define: { __DEFAULT_SERVER__: JSON.stringify(defaultServer) } };
 await build({ ...common, entryPoints: { background: join(here, "src/background/index.ts") }, outdir: out });
-await build({ ...common, entryPoints: { offscreen: join(here, "src/offscreen/recorder.ts"), popup: join(here, "src/popup/popup.ts"), prompt: join(here, "src/popup/prompt.ts") }, outdir: out });
+await build({ ...common, entryPoints: { offscreen: join(here, "src/offscreen/recorder.ts"), popup: join(here, "src/popup/popup.ts"), prompt: join(here, "src/popup/prompt.ts"), welcome: join(here, "src/popup/welcome.ts") }, outdir: out });
 // Content script is injected with chrome.scripting.executeScript, so it must be a classic script.
 await build({ ...common, format: "iife", entryPoints: { content: join(here, "src/content/agent.ts") }, outdir: out });
 

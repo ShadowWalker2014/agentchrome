@@ -19,6 +19,22 @@ export function startFixture() {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify({ ok: true, n: 7 }));
     }
+    if (req.url === "/edge") {
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end(readFileSync(join(here, "fixtures/edge.html")));
+    }
+    if (req.url === "/file.txt") {
+      res.writeHead(200, { "content-type": "text/plain", "content-disposition": 'attachment; filename="report.txt"' });
+      return res.end("report");
+    }
+    if (req.url === "/missing") {
+      res.writeHead(404, { "content-type": "text/html" });
+      return res.end("<title>Not found</title><h1>404</h1>");
+    }
+    if (req.url === "/leave") {
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end("<title>Leave</title><h1>Unsaved</h1><script>addEventListener('beforeunload', e => { e.preventDefault(); e.returnValue = ''; });</script>");
+    }
     if (req.url === "/second") {
       res.writeHead(200, { "content-type": "text/html" });
       return res.end("<title>Second page</title><h1>Second page</h1><p>Hello from page two.</p>");

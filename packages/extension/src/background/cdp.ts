@@ -23,6 +23,14 @@ interface TabState {
   console: ConsoleEntry[];
   network: Map<string, NetEntry>;
   dialog?: { type: string; message: string; defaultPrompt?: string };
+  /** Native file picker the page tried to open while interception was on. */
+  chooser?: { backendNodeId: number; mode: string; ts: number };
+  mainFrameId?: string;
+  /** Last top-level document load: HTTP status or network error. */
+  doc?: { url: string; status?: number; error?: string; ts: number };
+  crashed?: boolean;
+  downloads: { name: string; ts: number }[];
+  opened: { url: string; ts: number }[];
 }
 
 const attached = new Set<number>();
@@ -36,7 +44,7 @@ const MAX_ENTRIES = 1000;
 function state(tabId: number): TabState {
   let s = tabs.get(tabId);
   if (!s) {
-    s = { console: [], network: new Map() };
+    s = { console: [], network: new Map(), downloads: [], opened: [] };
     tabs.set(tabId, s);
   }
   return s;
@@ -75,7 +83,30 @@ chrome.debugger.onEvent.addListener((source, method, params: any) => {
     case "Log.entryAdded":
       s.console.push({ level: params.entry.level === "warning" ? "warn" : params.entry.level, text: params.entry.text, url: params.entry.url, ts: Date.now() });
       break;
+    case "Page.frameNavigated":
+      if (!params.frame.parentId) {
+        s.mainFrameId = params.frame.id;
+        s.crashed = false;
+      }
+      break;
+    case "Page.fileChooserOpened":
+      s.chooser = { backendNodeId: params.backendNodeId, mode: params.mode, ts: Date.now() };
+      break;
+    case "Page.windowOpen":
+      s.opened.push({ url: params.url, ts: Date.now() });
+      if (s.opened.length > 20) s.opened.shift();
+      break;
+    case "Page.downloadWillBegin":
+      s.downloads.push({ name: params.suggestedFilename, ts: Date.now() });
+      if (s.downloads.length > 20) s.downloads.shift();
+      break;
+    case "Inspector.targetCrashed":
+      s.crashed = true;
+      break;
     case "Network.requestWillBeSent":
+      if (params.type === "Document" && (!s.mainFrameId || params.frameId === s.mainFrameId)) {
+        s.doc = { url: params.request.url, ts: Date.now() };
+      }
       s.network.set(params.requestId, {
         requestId: params.requestId,
         url: params.request.url,
@@ -86,6 +117,7 @@ chrome.debugger.onEvent.addListener((source, method, params: any) => {
       break;
     case "Network.responseReceived": {
       const e = s.network.get(params.requestId);
+      if (params.type === "Document" && s.doc && (!s.mainFrameId || params.frameId === s.mainFrameId)) s.doc.status = params.response.status;
       if (e) {
         e.status = params.response.status;
         e.mimeType = params.response.mimeType;
@@ -101,6 +133,7 @@ chrome.debugger.onEvent.addListener((source, method, params: any) => {
     case "Network.loadingFailed": {
       const e = s.network.get(params.requestId);
       if (e) e.failed = params.errorText;
+      if (params.type === "Document" && s.doc && e && e.url === s.doc.url && !params.canceled) s.doc.error = params.errorText;
       break;
     }
     case "Page.javascriptDialogOpening":
@@ -121,7 +154,10 @@ chrome.debugger.onEvent.addListener((source, method, params: any) => {
 chrome.debugger.onDetach.addListener((source, reason) => {
   if (source.tabId !== undefined) {
     attached.delete(source.tabId);
-    if (reason === "canceled_by_user") userDetached.add(source.tabId);
+    if (reason === "canceled_by_user") {
+      userDetached.add(source.tabId);
+      for (const cb of cancelListeners) cb(source.tabId);
+    }
   }
 });
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -130,6 +166,11 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 export const userDetached = new Set<number>();
+const cancelListeners = new Set<(tabId: number) => void>();
+/** Called when the user presses Cancel on Chrome's "started debugging this browser" bar. */
+export function onUserCancel(cb: (tabId: number) => void) {
+  cancelListeners.add(cb);
+}
 
 export function onCdpEvent(l: Listener) {
   listeners.add(l);
@@ -156,7 +197,10 @@ export async function attach(tabId: number): Promise<void> {
       chrome.debugger.sendCommand({ tabId }, "Log.enable"),
       chrome.debugger.sendCommand({ tabId }, "Network.enable", { maxTotalBufferSize: 10_000_000 }),
       chrome.debugger.sendCommand({ tabId }, "Page.enable"),
+      chrome.debugger.sendCommand({ tabId }, "Inspector.enable"),
     ]).catch(() => {});
+    const tree: any = await chrome.debugger.sendCommand({ tabId }, "Page.getFrameTree").catch(() => null);
+    if (tree?.frameTree?.frame?.id) state(tabId).mainFrameId = tree.frameTree.frame.id;
   })();
   attaching.set(tabId, p);
   try {
@@ -192,3 +236,10 @@ export const networkOf = (tabId: number) => state(tabId).network;
 export const dialogOf = (tabId: number) => state(tabId).dialog;
 export const clearDialog = (tabId: number) => (state(tabId).dialog = undefined);
 export const isAttached = (tabId: number) => attached.has(tabId);
+
+export const chooserOf = (tabId: number) => state(tabId).chooser;
+export const clearChooser = (tabId: number) => (state(tabId).chooser = undefined);
+export const docOf = (tabId: number) => state(tabId).doc;
+export const crashedOf = (tabId: number) => Boolean(state(tabId).crashed);
+export const downloadsOf = (tabId: number) => state(tabId).downloads;
+export const openedOf = (tabId: number) => state(tabId).opened;
