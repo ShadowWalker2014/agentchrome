@@ -275,6 +275,21 @@ sh tests/e2e/local.sh                   # the same suite against local mode
 
 See [AGENTS.md](AGENTS.md) for the architecture and the rules for contributors.
 
+## Star history
+
+<a href="https://star-history.com/#ShadowWalker2014/agent-chrome-mcp&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ShadowWalker2014/agent-chrome-mcp&type=Date&theme=dark">
+    <img alt="Star history chart for agent-chrome-mcp" src="https://api.star-history.com/svg?repos=ShadowWalker2014/agent-chrome-mcp&type=Date" width="720">
+  </picture>
+</a>
+
+If agent-chrome-mcp saves you time, please star it. Stars help other developers find the project.
+
+<p>
+  <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp"><img src="https://img.shields.io/badge/%E2%98%85_Star_on_GitHub-2F6BFF?style=for-the-badge&logo=github&logoColor=white" alt="Star on GitHub"></a>
+</p>
+
 ## License
 
 MIT
