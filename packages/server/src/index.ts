@@ -127,6 +127,7 @@ const mcpApi: ExportedHandler<Env> = {
       instructions: SERVER_INSTRUCTIONS,
       profile: directoryProfile(props) ? "directory" : "agent",
       async callTool(name, args, session) {
+        if (name === "screenshot" && directoryProfile(props)) args = { ...args, save: false };
         let def = TOOL_BY_NAME.get(name)!;
         if (def.via) {
           args = def.via.map(args);

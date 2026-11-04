@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "agentchrome",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Let ChatGPT use your own Chrome, signed in as you, in its own tab group: read pages, click, type, fill forms, upload files, take screenshots and record clips.",
   "author": {
     "name": "Circo, Inc.",
@@ -24,7 +24,7 @@
       "interface": {
         "displayName": "Agent Chrome",
         "shortDescription": "Use your own Chrome browser",
-        "longDescription": "Agent Chrome lets ChatGPT use the Chrome browser on your computer, in the profiles you are already signed in to. It can check a dashboard, test your web app behind a login, fill in a form or collect information from a page, without a separate browser or sharing passwords.\n\nWhat you can do:\n- Open pages and tabs in ChatGPT's own tab group, and read their text.\n- Click, type, scroll, drag and drop, fill forms and upload files.\n- Take screenshots, including long full-page images, and record short video clips.\n- Read console errors and network requests while testing a site.\n- Switch between several Chrome profiles, such as Work and Personal.\n\nHow it stays in your control: ChatGPT works in a separate, named tab group. While it works, the page shows a blue border, a status bar with a Stop button and a visible cursor. You can pause or stop it from the extension, block sites, or require approval before each new site. ChatGPT asks you before actions that can't be undone, such as buying, sending or deleting.\n\nSetup: install the free, open-source Agent Chrome extension in desktop Chrome, sign in, and say \"connect my Chrome\".\n\nLimitations: desktop Chrome only. It never moves money. It can't act on chrome:// pages or the Chrome Web Store.",
+        "longDescription": "Agent Chrome lets ChatGPT use the Chrome browser on your computer, in the profiles you are already signed in to. It can check a dashboard, test your web app behind a login, fill in a form or collect information from a page, without a separate browser or sharing passwords.\n\nWhat you can do:\n- Open pages and tabs in ChatGPT's own tab group, and read their text.\n- Click, type, scroll, drag and drop, fill forms and upload files.\n- Take screenshots, including long full-page images, and record short video clips.\n- Read console errors and network requests while testing a site.\n- Switch between several Chrome profiles, such as Work and Personal.\n\nHow it stays in your control: ChatGPT works in a separate, named tab group. While it works, the page shows a blue border, a status bar with a Stop button and a visible cursor. You can pause or stop it from the extension, block sites, or require approval before each new site. ChatGPT asks you before actions that can't be undone, such as buying, sending or deleting.\n\nSetup: install the open-source Agent Chrome extension in desktop Chrome, sign in, and say \"connect my Chrome\".\n\nLimitations: desktop Chrome only. It never moves money. It can't act on chrome:// pages or the Chrome Web Store.",
         "developerName": "Circo, Inc.",
         "category": "Productivity",
         "capabilities": [

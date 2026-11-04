@@ -506,7 +506,7 @@ for (const t of TOOLS) if (["computer", "javascript_tool", "history_search", "ta
 // Hints for clients that ask before running tools with side effects (ChatGPT, Claude). Every tool acts on the open web.
 const READ_ONLY = new Set(["list_tab_groups", "list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "scroll", "hover", "wait", "zoom"]);
 // Actions whose effects may not be undoable: closing tabs or groups, clicks and keys that can submit, scripts, uploads.
-const DESTRUCTIVE = new Set(["tabs_close", "tab_groups", "close_tab_group", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
+const DESTRUCTIVE = new Set(["handle_dialog", "tabs_close", "tab_groups", "close_tab_group", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
 for (const t of TOOLS) {
   t.annotations = {
     title: t.title,
@@ -522,7 +522,14 @@ export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 export const inProfile = (t: ToolDef, profile: Profile) => !t.profile || t.profile === profile;
 
 export function publicTools(profile: Profile = "agent") {
-  return TOOLS.filter((t) => inProfile(t, profile)).map(({ name, title, description, inputSchema, annotations }) => ({
+  return TOOLS.filter((t) => inProfile(t, profile)).map(({ name, title, description, inputSchema, annotations }) => {
+    // Chat apps get a strictly read-only screenshot: saving uploads a file, which is a side effect.
+    if (profile === "directory" && name === "screenshot") {
+      const { save: _save, ...properties } = (inputSchema as any).properties ?? {};
+      inputSchema = { ...(inputSchema as any), properties };
+      description = description.replace(/ Set save=true[^.]*\./, "");
+    }
+    return {
     name,
     title,
     description,
@@ -531,5 +538,6 @@ export function publicTools(profile: Profile = "agent") {
     // Every tool needs the signed-in user (OpenAI per-tool auth declaration).
     securitySchemes: [{ type: "oauth2", scopes: ["browser"] }],
     _meta: { securitySchemes: [{ type: "oauth2", scopes: ["browser"] }] },
-  }));
+    };
+  });
 }
