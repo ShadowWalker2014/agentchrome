@@ -75,14 +75,14 @@ export const TOOLS: ToolDef[] = [
     title: "Get a pairing code",
     server: true,
     description:
-      "Get a one-time code to connect a Chrome profile to this account. Give the user the code with these steps: install the Agent Chrome extension (download link in the result), click its toolbar icon, paste the code and press Connect. Use this when list_browsers shows no browser, or the user wants to add another Chrome profile.",
+      "Get a one-time code that connects a Chrome profile to this account. The result has the code, the extension download link and the steps the user follows: install the extension, click its toolbar icon, paste the code and press Connect.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
     name: "tabs_context",
     title: "Get session tabs",
     description:
-      "Get the tabs in this session's Chrome tab group (id, url, title, active). Call this first to get a valid tabId. Each agent session gets its own tab group so its work stays separate from the user's tabs. Set createIfEmpty to open a blank tab in a new group when there is none. Set all=true to list every open tab in the browser.",
+      "Get the tabs in this session's Chrome tab group (id, url, title, active). Returns the tabIds the other tab tools accept. Each agent session gets its own tab group so its work stays separate from the user's tabs. Set createIfEmpty to open a blank tab in a new group when there is none. Set all=true to list every open tab in the browser.",
     inputSchema: obj({
       createIfEmpty: { type: "boolean", description: "Create the group with a new tab if the session has none. Default true." },
       all: { type: "boolean", description: "List every tab in the browser, not only this session's group." },
@@ -146,7 +146,7 @@ export const TOOLS: ToolDef[] = [
     description: [
       "Use a mouse and keyboard to interact with the page, and take screenshots.",
       "Coordinates are in the pixel space of the latest screenshot of that tab. Take a screenshot first.",
-      "Prefer clicking with ref (from read_page or find) over coordinates when you have one.",
+      "Clicks accept a ref (from read_page or find) or coordinates.",
       "Actions: screenshot, left_click, right_click, middle_click, double_click, triple_click, hover or mouse_move (moves the pointer without clicking), left_click_drag (start_coordinate or start_ref -> coordinate or ref; native HTML5 drag and drop works), type (text), key (text like 'Enter', 'cmd+a', 'ctrl+shift+t'; space-separated for sequences), scroll (scroll_direction, scroll_amount), scroll_to (ref), wait (duration seconds), zoom (region screenshot at full resolution).",
     ].join(" "),
     inputSchema: obj(
@@ -412,7 +412,7 @@ TOOLS.push(
     name: "click",
     title: "Click",
     profile: "directory",
-    description: "Click an element (by ref) or a point (by coordinate). Clicking can submit forms, buy things or send messages, so ask the user before clicks with irreversible effects.",
+    description: "Click an element (by ref) or a point (by coordinate). A click can submit forms, buy things or send messages.",
     inputSchema: obj({ ...target, button: { type: "string", enum: ["left", "right", "middle"] }, clicks: { type: "number", enum: [1, 2, 3], description: "2 for double click, 3 for triple click." }, tabId }),
     via: { tool: "computer", map: (a) => ({ ...pick(a, "ref", "coordinate", "tabId", "browser"), action: a.button === "right" ? "right_click" : a.button === "middle" ? "middle_click" : a.clicks === 2 ? "double_click" : a.clicks === 3 ? "triple_click" : "left_click" }) },
   },
@@ -420,7 +420,7 @@ TOOLS.push(
     name: "type_text",
     title: "Type text",
     profile: "directory",
-    description: "Type text into the focused field, or into the field given by ref (it is clicked first). Does not press Enter; use press_key for that.",
+    description: "Type text into the focused field, or into the field given by ref (it is clicked first). It does not press Enter.",
     inputSchema: obj({ text: { type: "string" }, ref: target.ref, tabId }, ["text"]),
     via: { tool: "computer", map: (a) => ({ ...pick(a, "ref", "tabId", "browser"), action: "type", text: a.text }) },
   },
@@ -460,7 +460,7 @@ TOOLS.push(
     name: "wait",
     title: "Wait",
     profile: "directory",
-    description: "Wait a number of seconds (max 30), e.g. for an animation. Prefer wait_for when waiting for content.",
+    description: "Wait a number of seconds (max 30), e.g. for an animation.",
     inputSchema: obj({ seconds: { type: "number", minimum: 0, maximum: 30 }, tabId }, ["seconds"]),
     via: { tool: "computer", map: (a) => ({ ...pick(a, "tabId", "browser"), action: "wait", duration: a.seconds }) },
   },
@@ -496,7 +496,7 @@ TOOLS.push(
     name: "close_tab_group",
     title: "Close a tab group",
     profile: "directory",
-    description: "Close every tab in this session's tab group. Unsaved work in those tabs is lost, so ask the user first.",
+    description: "Close every tab in this session's tab group. Unsaved work in those tabs is lost.",
     inputSchema: obj({}),
     via: { tool: "tab_groups", map: (a) => ({ ...pick(a, "browser"), action: "close" }) },
   },
