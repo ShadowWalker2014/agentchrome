@@ -412,7 +412,14 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
         page.tryContent(tabId, "ripple", { x: p.x, y: p.y });
         rec.noteClick(tabId, p.x, p.y);
         const since = Date.now();
-        await page.click(tabId, p.x, p.y, { button, count, modifiers: mods });
+        try {
+          await page.click(tabId, p.x, p.y, { button, count, modifiers: mods });
+        } catch (e) {
+          // Chrome refuses the debugger while another extension's frame is on the page (e.g. a password
+          // manager's autofill menu). Fall back to an in-page click, which works for ordinary buttons and links.
+          if (!/chrome-extension|Cannot control this tab|not attached/i.test(String((e as Error).message))) throw e;
+          await page.content(tabId, "domClick", { x: p.x, y: p.y, count, button: button === "right" ? 2 : button === "middle" ? 1 : 0 });
+        }
         // Give a dialog (alert/confirm) a moment to open so the result can mention it.
         for (let i = 0; i < 4 && !cdp.dialogOf(tabId); i++) await sleep(60);
         const effects = cdp.dialogOf(tabId) ? "" : await sideEffects(tabId, since);

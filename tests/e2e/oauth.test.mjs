@@ -104,8 +104,13 @@ test("connector sign-in works in a real browser: existing key and new account", 
     await page.goto(authUrl());
     await page.fill("#key", acct.apiKey);
     await Promise.all([page.waitForURL(/\/callback\?/), page.click("button[value=allow]")]);
-    assert.match(page.url(), /code=[^&]+&state=s1/);
-    // brand-new account from the sign-in page
+    assert.match(page.url(), /[?&]code=[^&]+/);
+    assert.match(page.url(), /[?&]state=s1/);
+    // signed in now: the page offers to continue as this account
+    await page.goto(authUrl());
+    await page.waitForSelector("text=Signed in as");
+    // brand-new account from the sign-in page, in a fresh browser
+    await page.context().clearCookies();
     await page.goto(authUrl());
     await page.click("button[value=create]");
     const key = await page.textContent("#k");
@@ -152,7 +157,7 @@ test("chat apps (ChatGPT, Claude) get one tool per action; coding agents get ful
   const chat = await toolsFor("ChatGPT");
   const names = chat.map((t) => t.name);
   for (const n of ["click", "type_text", "press_key", "scroll", "hover", "drag", "navigate", "screenshot", "read_page", "pairing_code"]) assert.ok(names.includes(n), `chat missing ${n}`);
-  for (const n of ["computer", "javascript_tool", "history_search"]) assert.ok(!names.includes(n), `chat should not have ${n}`);
+  for (const n of ["computer", "javascript_tool", "history_search", "tab_groups"]) assert.ok(!names.includes(n), `chat should not have ${n}`);
   for (const t of chat) {
     for (const h of ["readOnlyHint", "destructiveHint", "openWorldHint"]) assert.equal(typeof t.annotations[h], "boolean", `${t.name}.${h}`);
     assert.ok(t.title && t.description, t.name);

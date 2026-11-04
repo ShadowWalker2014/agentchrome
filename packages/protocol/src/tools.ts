@@ -93,7 +93,7 @@ export const TOOLS: ToolDef[] = [
     name: "tabs_create",
     title: "Open tab",
     description:
-      "Open a new tab inside this session's tab group and make it the session's current tab. Optionally load a URL.",
+      "Open a new tab in the user's own Chrome, inside this session's tab group, and make it the session's current tab. Optionally load a URL there, the same as typing it in the address bar (this is not an API call).",
     inputSchema: obj({
       url: { type: "string", description: "URL to open. Default about:blank." },
       active: { type: "boolean", description: "Focus the tab in its window. Default false (work happens in the background)." },
@@ -136,7 +136,7 @@ export const TOOLS: ToolDef[] = [
     name: "navigate",
     title: "Navigate",
     description:
-      "Load a URL in a tab and wait for it to finish loading. Use 'back' or 'forward' for history navigation, 'reload' to reload.",
+      "Load a URL in a tab of the user's own Chrome and wait for it to finish loading, the same as typing it in the address bar (this is not an API call). Use 'back' or 'forward' for history navigation, 'reload' to reload.",
     inputSchema: obj({ url: { type: "string" }, tabId, timeoutMs: { type: "number", description: "Max wait for load. Default 30000." } }, ["url"]),
     timeoutMs: 60_000,
   },
@@ -205,7 +205,7 @@ export const TOOLS: ToolDef[] = [
     name: "read_page",
     title: "Read accessibility tree",
     description:
-      "Get an accessibility-tree view of the page: each element's role, name and a ref like 'ref_12' usable in computer, form_input, file_upload and scroll_to. filter='interactive' returns only buttons, links and inputs. Output is limited to max_chars (default 50000).",
+      "Get an accessibility-tree view of the page: each element's role, name and a ref like 'ref_12' that other tools accept to act on that element. filter='interactive' returns only buttons, links and inputs. Output is limited to max_chars (default 50000).",
     inputSchema: obj({
       tabId,
       filter: { type: "string", enum: ["interactive", "all"], description: "Default all." },
@@ -470,12 +470,40 @@ TOOLS.push(
     via: { tool: "computer", map: (a) => ({ ...pick(a, "region", "tabId", "browser"), action: "zoom" }) },
   },
 );
-for (const t of TOOLS) if (t.name === "computer" || t.name === "javascript_tool" || t.name === "history_search") t.profile = "agent";
+// Group management split into read, write and destructive tools for directories (no mixed read/write tool).
+const groupProps = { groupId: { type: "number", description: "Default: this session's group." } };
+TOOLS.push(
+  {
+    name: "list_tab_groups",
+    title: "List tab groups",
+    profile: "directory",
+    description: "List the Chrome tab groups in this profile with their titles, colors and tabs. Shows which one is this session's group.",
+    inputSchema: obj({}),
+    via: { tool: "tab_groups", map: (a) => ({ ...pick(a, "browser"), action: "list" }) },
+  },
+  {
+    name: "update_tab_group",
+    title: "Rename or recolor a tab group",
+    profile: "directory",
+    description: "Rename, recolor, collapse or expand a tab group (default: this session's group).",
+    inputSchema: obj({ ...groupProps, title: { type: "string" }, color: { type: "string", enum: ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"] }, collapsed: { type: "boolean" } }),
+    via: { tool: "tab_groups", map: (a) => ({ ...pick(a, "groupId", "title", "color", "collapsed", "browser"), action: "update" }) },
+  },
+  {
+    name: "close_tab_group",
+    title: "Close a tab group",
+    profile: "directory",
+    description: "Close every tab in this session's tab group. Unsaved work in those tabs is lost, so ask the user first.",
+    inputSchema: obj({}),
+    via: { tool: "tab_groups", map: (a) => ({ ...pick(a, "browser"), action: "close" }) },
+  },
+);
+for (const t of TOOLS) if (["computer", "javascript_tool", "history_search", "tab_groups"].includes(t.name)) t.profile = "agent";
 
 // Hints for clients that ask before running tools with side effects (ChatGPT, Claude). Every tool acts on the open web.
-const READ_ONLY = new Set(["list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "scroll", "hover", "wait", "zoom"]);
+const READ_ONLY = new Set(["list_tab_groups", "list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "scroll", "hover", "wait", "zoom"]);
 // Actions whose effects may not be undoable: closing tabs or groups, clicks and keys that can submit, scripts, uploads.
-const DESTRUCTIVE = new Set(["tabs_close", "tab_groups", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
+const DESTRUCTIVE = new Set(["tabs_close", "tab_groups", "close_tab_group", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
 for (const t of TOOLS) {
   t.annotations = {
     title: t.title,

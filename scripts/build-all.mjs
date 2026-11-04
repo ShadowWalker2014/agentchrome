@@ -31,6 +31,8 @@ cpSync(join(pub, "install.sh"), join(pub, "install"));
 cpSync(join(root, "packages/cli/dist/cli.mjs"), join(pub, "cli.mjs"));
 cpSync(join(root, "packages/extension/agentchrome-extension.zip"), join(pub, "agentchrome-extension.zip"));
 cpSync(join(root, "brand/logo.svg"), join(pub, "logo.svg"));
+cpSync(join(root, "brand/icons/icon512.png"), join(pub, "icon-512.png"));
+cpSync(join(root, "brand/icons/icon256.png"), join(pub, "icon-256.png"));
 cpSync(join(root, "brand/social-card.png"), join(pub, "social-card.png"));
 writeFileSync(join(pub, "_headers"), "/install\n  Content-Type: text/plain; charset=utf-8\n/install.sh\n  Content-Type: text/plain; charset=utf-8\n/cli.mjs\n  Content-Type: text/javascript; charset=utf-8\n");
 console.log(`public assets staged for ${server}`);

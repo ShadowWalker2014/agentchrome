@@ -183,7 +183,16 @@ export async function attach(tabId: number): Promise<void> {
   if (inflight) return inflight;
   const p = (async () => {
     try {
-      await chrome.debugger.attach({ tabId }, "1.3");
+      try {
+        await chrome.debugger.attach({ tabId }, "1.3");
+      } catch (first) {
+        // Another extension's frame (password managers, etc.) blocks attaching; it usually goes away
+        // when the focused field loses focus. Blur and try once more.
+        if (!/chrome-extension/i.test(String((first as Error).message))) throw first;
+        await chrome.scripting.executeScript({ target: { tabId }, func: () => (document.activeElement as HTMLElement | null)?.blur?.() }).catch(() => {});
+        await new Promise((r) => setTimeout(r, 250));
+        await chrome.debugger.attach({ tabId }, "1.3");
+      }
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
       if (!/already attached/i.test(msg)) {

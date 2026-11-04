@@ -729,6 +729,33 @@ declare global {
     return { ref: refOf(el), tag: el.tagName.toLowerCase(), role, name: nameOf(el, role) || clean((el as HTMLElement).innerText, 60) };
   }
 
+  /**
+   * Click without the debugger: used when Chrome refuses to attach (for example while another extension,
+   * such as a password manager, shows a frame on the page). Dispatches the same pointer/mouse events a user makes.
+   */
+  function domClick(args: { x: number; y: number; count?: number; button?: number }) {
+    // Close password-manager overlays first: they disappear when the field loses focus.
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    const el = document.elementFromPoint(args.x, args.y) as HTMLElement | null;
+    if (!el) throw new Error("Nothing to click at that point.");
+    const opts = { bubbles: true, cancelable: true, composed: true, clientX: args.x, clientY: args.y, button: args.button ?? 0, view: window };
+    for (let i = 1; i <= (args.count ?? 1); i++) {
+      el.dispatchEvent(new PointerEvent("pointerdown", { ...opts, pointerId: 1, isPrimary: true }));
+      el.dispatchEvent(new MouseEvent("mousedown", { ...opts, detail: i }));
+      (el as HTMLElement).focus?.();
+      el.dispatchEvent(new PointerEvent("pointerup", { ...opts, pointerId: 1, isPrimary: true }));
+      el.dispatchEvent(new MouseEvent("mouseup", { ...opts, detail: i }));
+      el.dispatchEvent(new MouseEvent("click", { ...opts, detail: i }));
+    }
+    if ((args.count ?? 1) === 2) el.dispatchEvent(new MouseEvent("dblclick", { ...opts, detail: 2 }));
+    return el.tagName.toLowerCase();
+  }
+
+  function blurActive() {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+    return true;
+  }
+
   function markUpload(args: { ref: string }) {
     const el = elOf(args.ref);
     const isFile = (x: Element | null | undefined): x is HTMLInputElement => x instanceof HTMLInputElement && x.type === "file";
@@ -748,7 +775,7 @@ declare global {
   }
 
   const fns: Record<string, (a: any) => any> = {
-    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt, cursorTo, cursorHide, markUpload, passThrough,
+    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt, cursorTo, cursorHide, markUpload, passThrough, domClick, blurActive,
     ping: () => true,
   };
 

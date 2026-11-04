@@ -212,7 +212,7 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
       heading: `Connect ${clientName}`,
       intro: `${clientName} wants to use the Chrome profiles connected to your Agent Chrome account.`,
       client: { name: clientName, host },
-      bullets: ["Open, read and click in tabs, inside its own tab group", "Take screenshots and record video clips", "Run JavaScript on pages it opens"],
+      bullets: ["Open, read and click in tabs, inside its own tab group", "Take screenshots and record video clips", "It asks you before actions that can't be undone"],
       continueLabel: `Allow ${clientName}`,
     },
     async (accountId) => {
