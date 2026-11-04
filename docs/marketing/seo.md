@@ -18,6 +18,7 @@
 
 ## To do
 
+- When the Web Store approves 0.1.1, upload store/agentchrome-extension-0.1.2.zip (task-named tab groups) and submit it. Kai chose not to cancel the 0.1.1 review. Google Cloud project agentchrome-cws-36256 has service account cws-publisher@agentchrome-cws-36256.iam.gserviceaccount.com for the Web Store API, but it is not yet added in the publisher settings (the dashboard needs a real click).
 - When the Web Store approves the item, change "load unpacked" in README and docs/marketing/content-brief.md to the store link.
 - Every week, check Search Console queries and pages, and check the AI Overview with `google_serp` for "chrome mcp server", "claude code chrome", "codex chrome extension" and "playwright mcp vs chrome devtools mcp".
 - List on Smithery, Glama, mcp.so and mcpservers.org.
