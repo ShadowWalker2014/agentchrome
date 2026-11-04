@@ -131,6 +131,63 @@ async function onMessage(sock: WebSocket, raw: unknown) {
   }
 }
 
+// ---------------- browser sign-in (cloud) ----------------
+// The popup opens <server>/connect?cid=… in a tab; we poll until the user has signed in there, then connect.
+
+interface PendingConnect {
+  cid: string;
+  server: string;
+  tabId?: number;
+  until: number;
+}
+
+async function pendingConnect(): Promise<PendingConnect | undefined> {
+  const { pendingConnect: p } = await chrome.storage.session.get("pendingConnect");
+  return p as PendingConnect | undefined;
+}
+
+let polling = false;
+async function pollConnect() {
+  if (polling) return;
+  polling = true;
+  try {
+    for (;;) {
+      const p = await pendingConnect();
+      if (!p) return;
+      if (Date.now() > p.until) {
+        await chrome.storage.session.remove("pendingConnect");
+        return;
+      }
+      const res = await fetch(`${p.server}/api/connect/poll?cid=${encodeURIComponent(p.cid)}`, { cache: "no-store" }).catch(() => null);
+      if (res?.status === 200) {
+        const body = await res.json();
+        await chrome.storage.session.remove("pendingConnect");
+        const cur = await getConnection();
+        ws?.close(1000);
+        ws = null;
+        await setConnection({ server: p.server, deviceToken: body.deviceToken, deviceId: body.deviceId, accountId: body.accountId, name: cur.name });
+        await connect();
+        if (p.tabId !== undefined) setTimeout(() => chrome.tabs.remove(p.tabId!).catch(() => {}), 1800);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  } finally {
+    polling = false;
+  }
+}
+
+async function startConnect(server: string, name: string) {
+  const base = server.replace(/\/+$/, "");
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  const cid = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const cur = await getConnection();
+  await setConnection({ ...cur, name });
+  const tab = await chrome.tabs.create({ url: `${base}/connect?cid=${cid}&name=${encodeURIComponent(name)}`, active: true });
+  await chrome.storage.session.set({ pendingConnect: { cid, server: base, tabId: tab.id, until: Date.now() + 15 * 60_000 } satisfies PendingConnect });
+  pollConnect();
+}
+
 // ---------------- popup / page messages ----------------
 
 async function pair(server: string, code: string, name: string) {
@@ -158,8 +215,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const s = await getSettings();
         const sessions = await allSessions();
         const history = await chrome.permissions.contains({ permissions: ["history"] });
-        return { status, lastError, server: c.server, name: c.name, deviceId: c.deviceId, settings: s, history, sessions, activeCalls, version: VERSION };
+        return { status, lastError, server: c.server, name: c.name, deviceId: c.deviceId, settings: s, history, sessions, activeCalls, version: VERSION, connectPending: Boolean(await pendingConnect()) };
       }
+      case "acm:connect-start":
+        await startConnect(msg.server, msg.name || "Chrome");
+        return { ok: true };
       case "acm:pair":
         return { deviceId: await pair(msg.server, msg.code, msg.name) };
       case "acm:unpair": {
@@ -248,6 +308,7 @@ onUserCancel(() => {
 chrome.alarms.create("acm-keepalive", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === "acm-keepalive" && (!ws || ws.readyState === WebSocket.CLOSED)) connect();
+  if (a.name === "acm-keepalive") pollConnect(); // resume after the service worker was suspended
 });
 chrome.runtime.onStartup.addListener(connect);
 chrome.runtime.onInstalled.addListener(async (d) => {

@@ -23,23 +23,22 @@
       <li class="step" id="s2">
         <span class="num">2</span>
         <div class="body">
-          <h3>Get a pairing code</h3>
-          <p class="muted">In a terminal, run this. It also adds the server to every agent on your machine.</p>
-          <button class="cmdline" id="copyCmd" type="button"><span><b>$</b> curl -fsSL https://agent-chrome-mcp.circo.workers.dev/install | sh</span><span class="copy" id="copyLabel">Copy</span></button>
-          <p class="muted small">Already set up? Run <code>agent-chrome-mcp pair</code> for a new code.</p>
-        </div>
-      </li>
-      <li class="step" id="s3">
-        <span class="num">3</span>
-        <div class="body">
-          <h3>Paste it here</h3>
-          <form id="pairForm" class="pairrow" autocomplete="off">
-            <input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" aria-label="Pairing code" required>
-            <input id="pname" class="pname" placeholder="Profile name, e.g. Work" maxlength="60" aria-label="Profile name">
-            <button id="pair" class="btn primary" type="submit">Connect</button>
-          </form>
-          <details id="serverBox"><summary>Server <span id="serverShort" class="mono muted"></span></summary><input id="server" class="mono" spellcheck="false" aria-label="Server URL"><p class="hint">Your own deployment, or <code>http://127.0.0.1:47823</code> in local mode.</p></details>
+          <h3>Sign in to connect this profile</h3>
+          <p class="muted">Create a free account or sign in. Your agents can then work in this Chrome profile, each in its own tab group.</p>
+          <div class="pairrow">
+            <input id="pname" class="pname" placeholder="Name this profile, e.g. Work" maxlength="60" aria-label="Profile name">
+            <button id="signin" class="btn primary" type="button">Sign in to connect</button>
+          </div>
+          <p id="waiting" class="muted small" hidden>Finish signing in in the new tab. This page updates by itself.</p>
           <div id="pairError" class="alert" role="alert" hidden></div>
+          <details id="localBox"><summary>Running a local server instead?</summary>
+            <p class="muted small">Start it with <code>agentchrome serve</code>, get a code with <code>agentchrome pair --local</code>, then paste it here.</p>
+            <form id="pairForm" class="pairrow" autocomplete="off">
+              <input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" aria-label="Pairing code">
+              <input id="server" class="mono pname" spellcheck="false" aria-label="Local server URL">
+              <button id="pair" class="btn" type="submit">Connect</button>
+            </form>
+          </details>
         </div>
       </li>
     </ol>

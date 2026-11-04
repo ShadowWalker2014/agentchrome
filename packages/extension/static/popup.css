@@ -146,3 +146,8 @@ body.prompt h1{font-size:16px}
 body.prompt p{margin:0 0 18px;font-size:12.5px}
 body.prompt .actions{display:flex;flex-direction:column;gap:8px;margin-top:auto}
 #serverLabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn.lg{height:42px;font-size:14px;margin-top:14px}
+.link.center{display:block;margin:12px auto 0}
+.waiting{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0}
+.spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--blue);animation:spin .7s linear infinite}
+#localView code{font-size:11px;background:var(--hover);padding:1px 5px;border-radius:5px}

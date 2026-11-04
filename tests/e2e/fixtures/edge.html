@@ -22,6 +22,7 @@ body{font-family:system-ui;margin:24px}
 <div class="row"><div id="dropfiles" aria-label="Drop files">Drop files</div><span id="dropOut"></span></div>
 <div class="row"><a href="/second" target="_blank" id="newtab">Open in new tab</a> <a href="/file.txt" download id="dl">Download report</a>
   <button id="promptBtn" onclick="document.getElementById('promptOut').textContent = prompt('Your name?', 'x')">Ask name</button><span id="promptOut"></span></div>
+<button id="payBtn" style="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);width:420px;height:44px" onclick="this.textContent='Paid'">Register and pay</button>
 <script>
 const card = document.getElementById('card'), zone = document.getElementById('zone');
 card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', 'card-1'));

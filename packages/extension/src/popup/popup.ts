@@ -49,13 +49,14 @@ async function render() {
   $<HTMLAnchorElement>("docsLink").href = server;
 
   if (!paired) {
-    const serverInput = $<HTMLInputElement>("server");
-    if (!serverInput.value) serverInput.value = server;
-    $("serverShort").textContent = shortHost(serverInput.value);
     const pname = $<HTMLInputElement>("pname");
     if (!pname.value && s.name) pname.value = s.name;
-    if (s.status === "revoked" && s.lastError && firstRender) showPairError(s.lastError);
-    if (firstRender) $("code").focus();
+    const serverInput = $<HTMLInputElement>("server");
+    if (!serverInput.value) serverInput.value = s.server && s.server !== __DEFAULT_SERVER__ ? s.server : "http://127.0.0.1:47823";
+    $("waiting").hidden = !s.connectPending;
+    $<HTMLButtonElement>("signin").disabled = Boolean(s.connectPending);
+    $("signin").textContent = s.connectPending ? "Waiting for sign-in…" : "Sign in to connect";
+    if (s.status === "revoked" && s.lastError && firstRender) showError("pairError", s.lastError);
     firstRender = false;
     return;
   }
@@ -116,11 +117,28 @@ async function render() {
   );
 }
 
-function showPairError(msg: string) {
-  const err = $("pairError");
+function showError(id: string, msg: string) {
+  const err = $(id);
   err.hidden = false;
   err.textContent = msg;
 }
+
+// Cloud (default): sign in on the web, the extension connects itself.
+$("signin").onclick = async () => {
+  $("pairError").hidden = true;
+  const r = await send<any>({ type: "acm:connect-start", server: __DEFAULT_SERVER__, name: $<HTMLInputElement>("pname").value.trim() || "Chrome" });
+  if (r?.error) showError("pairError", r.error);
+  render();
+};
+
+// Local server: pairing code from `agent-chrome-mcp pair --local`.
+const showLocal = (on: boolean) => {
+  $("cloudView").hidden = on;
+  $("localView").hidden = !on;
+  if (on) $("code").focus();
+};
+$("toLocal").onclick = () => showLocal(true);
+$("toCloud").onclick = () => showLocal(false);
 
 const codeInput = $<HTMLInputElement>("code");
 codeInput.addEventListener("input", () => {
@@ -129,36 +147,34 @@ codeInput.addEventListener("input", () => {
   codeInput.value = formatCode(codeInput.value);
   const delta = codeInput.value.length - before;
   codeInput.setSelectionRange(pos + delta, pos + delta);
-  $("pairError").hidden = true;
+  $("localError").hidden = true;
   codeInput.classList.toggle("complete", codeInput.value.length === 11);
 });
-$<HTMLInputElement>("server").addEventListener("input", (e) => ($("serverShort").textContent = shortHost((e.target as HTMLInputElement).value)));
 
-$("pairForm").addEventListener("submit", async (e) => {
+$("localView").addEventListener("submit", async (e) => {
   e.preventDefault();
   const btn = $<HTMLButtonElement>("pair");
   const code = formatCode(codeInput.value);
   if (code.length !== 11) {
-    showPairError("Pairing codes have 10 characters, like ABCDE-FGHJK.");
+    showError("localError", "Pairing codes have 10 characters, like ABCDE-FGHJK.");
     codeInput.focus();
     return;
   }
-  $("pairError").hidden = true;
+  $("localError").hidden = true;
   btn.disabled = true;
   btn.classList.add("loading");
   btn.textContent = "Connecting";
   try {
-    await chrome.permissions.request({ permissions: ["identity", "identity.email"] }).catch(() => false);
     const r = await send<any>({
       type: "acm:pair",
-      server: $<HTMLInputElement>("server").value.trim() || __DEFAULT_SERVER__,
+      server: $<HTMLInputElement>("server").value.trim(),
       code,
-      name: $<HTMLInputElement>("pname").value.trim() || "Chrome",
+      name: $<HTMLInputElement>("pnameLocal").value.trim() || "Chrome",
     });
     if (r?.error) throw new Error(r.error);
     toast("Connected");
   } catch (err) {
-    showPairError(String((err as Error).message ?? err).replace(/^Error: /, ""));
+    showError("localError", String((err as Error).message ?? err).replace(/^Error: /, ""));
   } finally {
     btn.disabled = false;
     btn.classList.remove("loading");
@@ -166,11 +182,6 @@ $("pairForm").addEventListener("submit", async (e) => {
     render();
   }
 });
-
-$("copyCmd").onclick = async () => {
-  await navigator.clipboard.writeText(`curl -fsSL ${(($("server") as HTMLInputElement)?.value || __DEFAULT_SERVER__).replace(/\/+$/, "")}/install | sh`);
-  toast("Copied to clipboard");
-};
 
 const nameInput = $<HTMLInputElement>("name");
 nameInput.addEventListener("change", async () => {

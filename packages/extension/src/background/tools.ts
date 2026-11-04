@@ -789,7 +789,11 @@ export async function runTool(name: string, args: Args, info: SessionInfo, signa
       // The page is frozen until the dialog is handled; anything else would hang.
       return { content: [text(`Tab ${tabId} is blocked by a ${cdp.dialogOf(tabId)!.type} dialog: ${JSON.stringify(cdp.dialogOf(tabId)!.message)}. Call handle_dialog first.`)], isError: true };
     }
-    if (tabId !== undefined) await overlayWorking(tabId, session).catch(() => {});
+    if (tabId !== undefined) {
+      await overlayWorking(tabId, session).catch(() => {});
+      // The pill and border stay visible but let the agent's clicks, drags and scrolls reach the page.
+      await page.tryContent(tabId, "passThrough", { on: true });
+    }
   }
   try {
     const result = await Promise.race([
@@ -800,7 +804,10 @@ export async function runTool(name: string, args: Args, info: SessionInfo, signa
   } catch (e) {
     return { content: [text(`Error: ${(e as Error)?.message ?? String(e)}`)], isError: true };
   } finally {
-    if (tabId !== undefined) overlayIdle(tabId, session).catch(() => {});
+    if (tabId !== undefined) {
+      page.tryContent(tabId, "passThrough", { on: false }).catch(() => {});
+      overlayIdle(tabId, session).catch(() => {});
+    }
   }
 }
 

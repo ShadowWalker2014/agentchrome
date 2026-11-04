@@ -114,6 +114,75 @@ export async function redeemPairCode(env: Env, rawCode: string, name: string, em
   return { accountId: claimed.account_id, deviceId, deviceToken };
 }
 
+export async function createDevice(env: Env, accountId: string, name: string, email?: string, version?: string) {
+  const deviceId = `dev_${randomId(9)}`;
+  const deviceToken = newDeviceToken();
+  await env.DB.prepare(
+    "INSERT INTO devices (id, account_id, token_hash, name, email, version, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+  )
+    .bind(deviceId, accountId, await sha256(deviceToken), name.slice(0, 80) || "Chrome", email ?? null, version ?? null, now(), now())
+    .run();
+  return { accountId, deviceId, deviceToken };
+}
+
+// ---------- browser sign-in session (cookie) ----------
+
+const SESSION_COOKIE = "__Host-acm_session";
+const SESSION_DAYS = 30;
+
+async function hmacHex(secret: string, data: string) {
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function sessionCookie(secret: string, accountId: string) {
+  const exp = now() + SESSION_DAYS * 86_400_000;
+  const value = `${accountId}.${exp}`;
+  return `${SESSION_COOKIE}=${value}.${await hmacHex(secret, value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86_400}`;
+}
+
+export const clearSessionCookie = () => `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+
+export async function sessionAccount(secret: string, request: Request): Promise<string | null> {
+  const raw = (request.headers.get("cookie") ?? "").split(/;\s*/).find((c) => c.startsWith(`${SESSION_COOKIE}=`));
+  if (!raw) return null;
+  const [accountId, exp, sig] = raw.slice(SESSION_COOKIE.length + 1).split(".");
+  if (!accountId || !exp || !sig || Number(exp) < now()) return null;
+  return (await hmacHex(secret, `${accountId}.${exp}`)) === sig ? accountId : null;
+}
+
+// ---------- extension connect requests ----------
+
+export async function startConnect(env: Env, cid: string, name: string) {
+  const h = await sha256(cid);
+  await env.DB.prepare("INSERT OR IGNORE INTO connect_requests (id_hash, name, created_at, expires_at) VALUES (?, ?, ?, ?)")
+    .bind(h, name.slice(0, 80) || "Chrome", now(), now() + 15 * 60_000)
+    .run();
+}
+
+export async function completeConnect(env: Env, cid: string, accountId: string) {
+  const h = await sha256(cid);
+  const row = await env.DB.prepare("SELECT name, done_at, expires_at FROM connect_requests WHERE id_hash = ?").bind(h).first<{ name: string; done_at: number | null; expires_at: number }>();
+  if (!row || row.done_at || row.expires_at < now()) return null;
+  const dev = await createDevice(env, accountId, row.name);
+  await env.DB.prepare("UPDATE connect_requests SET account_id = ?, device_id = ?, device_token = ?, done_at = ? WHERE id_hash = ?")
+    .bind(accountId, dev.deviceId, dev.deviceToken, now(), h)
+    .run();
+  return { ...dev, name: row.name };
+}
+
+/** One-time pickup by the extension. The token is deleted as soon as it is read. */
+export async function pollConnect(env: Env, cid: string) {
+  const h = await sha256(cid);
+  const row = await env.DB.prepare("DELETE FROM connect_requests WHERE id_hash = ? AND device_token IS NOT NULL RETURNING account_id, device_id, device_token")
+    .bind(h)
+    .first<{ account_id: string; device_id: string; device_token: string }>();
+  if (row) return { accountId: row.account_id, deviceId: row.device_id, deviceToken: row.device_token };
+  await env.DB.prepare("DELETE FROM connect_requests WHERE expires_at < ?").bind(now()).run();
+  return null;
+}
+
 export interface DeviceRow {
   id: string;
   name: string;

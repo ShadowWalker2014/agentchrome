@@ -18,10 +18,16 @@ import {
   redeemPairCode,
   verifyApiKey,
   verifyDeviceToken,
+  sessionAccount,
+  sessionCookie,
+  clearSessionCookie,
+  startConnect,
+  completeConnect,
+  pollConnect,
   type Principal,
 } from "./auth";
 import type { Env } from "./env";
-import { authorizePage, newKeyPage, page } from "./pages";
+import { doneConnectPage, newKeyPage, page, signInPage, type SignInOpts } from "./pages";
 
 export { AccountHub } from "./hub";
 
@@ -132,45 +138,111 @@ const mcpApi: ExportedHandler<Env> = {
 
 // ---------- everything else ----------
 
+type SignInText = Omit<SignInOpts, "signedInAs" | "canSignUp" | "error">;
+
+/**
+ * Shared sign-in for the extension's Connect page and OAuth clients. Uses the session cookie when present,
+ * otherwise "Create a free account" or an account key. Calls onSuccess with the signed-in account.
+ */
+async function signIn(request: Request, env: Env, text: SignInText, onSuccess: (accountId: string) => Promise<Response>, onDeny?: () => Response): Promise<Response> {
+  const secret = await sessionSecret(env);
+  const canSignUp = env.SIGNUP_MODE !== "closed";
+  const current = await sessionAccount(secret, request);
+  const render = (signedInAs: string | null, error?: string, cookie?: string) => {
+    const r = signInPage({ ...text, signedInAs: signedInAs ?? undefined, canSignUp, error });
+    if (cookie) r.headers.append("set-cookie", cookie);
+    return r;
+  };
+  if (request.method !== "POST") return render(current);
+  const form = await request.formData();
+  const decision = String(form.get("decision") ?? "");
+  const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+  if (decision === "deny") return onDeny ? onDeny() : render(current);
+  if (decision === "signout") return render(null, undefined, clearSessionCookie());
+  if (decision === "create") {
+    if (!canSignUp) return render(null, "Sign-up is closed on this server. Ask its admin for an account key.");
+    if (await limited(env.SIGNUP_LIMITER, `signup:${ip}`)) return render(null, "Too many sign-ups from this address. Try again later.");
+    const acct = await createAccount(env, "web");
+    const r = newKeyPage(acct.apiKey, text.continueLabel);
+    r.headers.append("set-cookie", await sessionCookie(secret, acct.accountId));
+    return r;
+  }
+  let accountId = current;
+  const key = String(form.get("api_key") ?? "").trim();
+  if (key) {
+    if (await limited(env.PAIR_LIMITER, `auth:${ip}`)) return render(null, "Too many attempts. Wait a minute and try again.");
+    accountId = (await verifyApiKey(env, key))?.accountId ?? null;
+    if (!accountId) return render(null, "That account key is not valid.");
+  }
+  if (!accountId) return render(null, "Create an account or enter your account key.");
+  const r = await onSuccess(accountId);
+  const out = new Response(r.body, r);
+  out.headers.append("set-cookie", await sessionCookie(secret, accountId));
+  return out;
+}
+
 async function handleAuthorize(request: Request, env: Env): Promise<Response> {
   const oauthReq = await env.OAUTH_PROVIDER.parseAuthRequest(request);
   const client = await env.OAUTH_PROVIDER.lookupClient(oauthReq.clientId);
-  if (!client) return page("Error", `<h1>Unknown app</h1><p>This client is not registered.</p>`);
+  if (!client) return page("Error", `<h1>Unknown app</h1><p>This app is not registered with this server.</p>`);
   const clientName = client.clientName || "An MCP client";
-  const redirectHost = (() => {
+  const host = (() => {
     try {
       return new URL(oauthReq.redirectUri).host;
     } catch {
       return oauthReq.redirectUri;
     }
   })();
-  if (request.method === "GET") return authorizePage(clientName, redirectHost, undefined, env.SIGNUP_MODE !== "closed");
+  return signIn(
+    request,
+    env,
+    {
+      heading: `Connect ${clientName}`,
+      intro: `${clientName} wants to use the Chrome profiles connected to your Agent Chrome account.`,
+      client: { name: clientName, host },
+      bullets: ["Open, read and click in tabs, inside its own tab group", "Take screenshots and record video clips", "Run JavaScript on pages it opens"],
+      continueLabel: `Allow ${clientName}`,
+    },
+    async (accountId) => {
+      const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
+        request: oauthReq,
+        userId: accountId,
+        metadata: { client: clientName },
+        scope: oauthReq.scope,
+        props: { accountId, via: "oauth" } satisfies Principal,
+      });
+      return Response.redirect(redirectTo, 302);
+    },
+    () => {
+      const u = new URL(oauthReq.redirectUri);
+      u.searchParams.set("error", "access_denied");
+      if (oauthReq.state) u.searchParams.set("state", oauthReq.state);
+      return Response.redirect(u.toString(), 302);
+    },
+  );
+}
 
-  const form = await request.formData();
-  if (form.get("decision") !== "allow") {
-    const u = new URL(oauthReq.redirectUri);
-    u.searchParams.set("error", "access_denied");
-    if (oauthReq.state) u.searchParams.set("state", oauthReq.state);
-    return Response.redirect(u.toString(), 302);
-  }
-  const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
-  if (form.get("decision") === "create") {
-    if (env.SIGNUP_MODE === "closed") return authorizePage(clientName, redirectHost, "Sign-up is closed on this server. Ask its admin for an account key.");
-    if (await limited(env.SIGNUP_LIMITER, `signup:${ip}`)) return authorizePage(clientName, redirectHost, "Too many sign-ups from this address. Try again later.");
-    const acct = await createAccount(env, clientName.slice(0, 40));
-    return newKeyPage(clientName, redirectHost, acct.apiKey);
-  }
-  if (await limited(env.PAIR_LIMITER, `auth:${ip}`)) return authorizePage(clientName, redirectHost, "Too many attempts. Wait a minute and try again.");
-  const principal = await verifyApiKey(env, String(form.get("api_key") ?? "").trim());
-  if (!principal) return authorizePage(clientName, redirectHost, "That account key is not valid.");
-  const { redirectTo } = await env.OAUTH_PROVIDER.completeAuthorization({
-    request: oauthReq,
-    userId: principal.accountId,
-    metadata: { client: clientName },
-    scope: oauthReq.scope,
-    props: { accountId: principal.accountId, via: "oauth" } satisfies Principal,
-  });
-  return Response.redirect(redirectTo, 302);
+/** The extension opens /connect?cid=…&name=… and polls /api/connect/poll until the user has signed in here. */
+async function handleConnect(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const cid = url.searchParams.get("cid") ?? "";
+  const name = (url.searchParams.get("name") ?? "Chrome").slice(0, 80) || "Chrome";
+  if (!/^[A-Za-z0-9_-]{22,64}$/.test(cid)) return page("Connect", `<h1>Open this from the extension</h1><p>Click the Agent Chrome icon in your toolbar and press <b>Sign in to connect</b>.</p>`);
+  if (request.method === "GET") await startConnect(env, cid, name);
+  return signIn(
+    request,
+    env,
+    {
+      heading: "Connect this Chrome profile",
+      intro: `Sign in to let your agents use the "${name}" profile. Each agent works in its own tab group, and you can stop it at any time.`,
+      continueLabel: `Connect ${name}`,
+    },
+    async (accountId) => {
+      const done = await completeConnect(env, cid, accountId);
+      if (!done) return page("Expired", `<h1>This sign-in link expired</h1><p>Open the Agent Chrome extension and press <b>Sign in to connect</b> again.</p>`);
+      return doneConnectPage(done.name);
+    },
+  );
 }
 
 async function handleWebSocket(request: Request, env: Env): Promise<Response> {
@@ -221,6 +293,14 @@ const app: ExportedHandler<Env> = {
     const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
 
     if (path === "/authorize") return handleAuthorize(request, env);
+    if (path === "/connect") return handleConnect(request, env);
+    if (path === "/api/connect/poll") {
+      const cid = url.searchParams.get("cid") ?? "";
+      if (!/^[A-Za-z0-9_-]{22,64}$/.test(cid)) return err(400, "bad id");
+      const r = await pollConnect(env, cid);
+      if (!r) return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+      return json({ ...r, server: origin }, 200, { "cache-control": "no-store" });
+    }
     if (path === "/ws") return handleWebSocket(request, env);
     if (path === "/health") return json({ ok: true, version: VERSION });
     if (path === "/.well-known/oauth-protected-resource") {

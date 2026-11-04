@@ -171,3 +171,14 @@ test("hover and mouse_move move the agent cursor without clicking", async () => 
   assert.match(r.text, /Hovering at .* on button "Ask name"/);
   assert.equal(await page.textContent("#promptOut"), "");
 });
+
+test("the status pill never blocks a click on a button underneath it", async () => {
+  await mcp.call("navigate", { url: `${fixture.url}/edge` });
+  const btn = refOf((await mcp.call("find", { query: "Register and pay" })).text, /button "Register and pay" \[(ref_\d+)\]/);
+  const r = await mcp.call("computer", { action: "left_click", ref: btn });
+  assert.match(r.text, /on button "Register and pay"/, r.text);
+  assert.equal(await page.textContent("#payBtn"), "Paid");
+  // and the pill is still there for the user afterwards
+  const pass = await page.evaluate(() => document.getElementById("__acm_overlay_host")?.hasAttribute("data-pass"));
+  assert.equal(pass, false);
+});

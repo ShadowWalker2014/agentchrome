@@ -466,6 +466,7 @@ declare global {
       button{all:unset;cursor:pointer;height:26px;padding:0 11px;border-radius:999px;background:rgba(255,255,255,.08);color:#FAFAFA;font-weight:500;font-size:12px;display:inline-flex;align-items:center;
         box-shadow:0 0 0 1px rgba(255,255,255,.08) inset;transition:background .15s}
       button:hover{background:rgba(255,255,255,.16)}
+      :host([data-pass]) *{pointer-events:none!important}
       :host([data-clean]) .frame,:host([data-clean]) .pill,:host([data-clean]) .ripple{display:none!important}
       .ripple{position:fixed;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #2F6BFF;background:rgba(47,107,255,.18);pointer-events:none;animation:rip .55s cubic-bezier(.2,.8,.2,1) forwards}
       @keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.7);opacity:0}}
@@ -532,6 +533,14 @@ declare global {
         if (!args.rec) pill.classList.remove("on");
       }, args.linger ?? 1500);
     }
+    return true;
+  }
+
+  /** While the agent's own input is dispatched, the overlay must never catch it. */
+  function passThrough(args: { on: boolean }) {
+    ensureOverlay();
+    if (args.on) host!.setAttribute("data-pass", "");
+    else host!.removeAttribute("data-pass");
     return true;
   }
 
@@ -739,7 +748,7 @@ declare global {
   }
 
   const fns: Record<string, (a: any) => any> = {
-    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt, cursorTo, cursorHide, markUpload,
+    readPage, find, refRect, formInput, pageText, waitFor, setFiles, overlay, setOverlayVisible, ripple, viewport, elementAt, cursorTo, cursorHide, markUpload, passThrough,
     ping: () => true,
   };
 

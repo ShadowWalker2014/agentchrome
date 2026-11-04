@@ -29,12 +29,11 @@ async function render() {
   const server = s.server || __DEFAULT_SERVER__;
   $<HTMLAnchorElement>("docs").href = server;
   const sv = $<HTMLInputElement>("server");
-  if (!sv.value) sv.value = server;
-  $("serverShort").textContent = shortHost(sv.value);
+  if (!sv.value) sv.value = "http://127.0.0.1:47823";
+  $("waiting").hidden = !s.connectPending;
   if (paired) $("doneName").textContent = s.name || "This profile";
   const code = $<HTMLInputElement>("code");
-  for (const id of ["s1", "s2", "s3"]) $(id).classList.remove("active");
-  $(code.value ? "s3" : "s2").classList.add("active");
+  $("s2").classList.add("active");
 }
 
 const code = $<HTMLInputElement>("code");
@@ -44,7 +43,7 @@ code.addEventListener("input", () => {
   $("pairError").hidden = true;
   render();
 });
-$<HTMLInputElement>("server").addEventListener("input", (e) => ($("serverShort").textContent = shortHost((e.target as HTMLInputElement).value)));
+
 
 $("pairForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -64,7 +63,7 @@ $("pairForm").addEventListener("submit", async (e) => {
     await chrome.permissions.request({ permissions: ["identity", "identity.email"] }).catch(() => false);
     const r = await send<any>({
       type: "acm:pair",
-      server: $<HTMLInputElement>("server").value.trim() || __DEFAULT_SERVER__,
+      server: $<HTMLInputElement>("server").value.trim(),
       code: c,
       name: $<HTMLInputElement>("pname").value.trim() || "Chrome",
     });
@@ -88,11 +87,19 @@ const copy = async (text: string, label?: HTMLElement) => {
     setTimeout(() => (label.textContent = "Copy"), 1500);
   }
 };
-$("copyCmd").onclick = () => copy(`curl -fsSL ${(($("server") as HTMLInputElement)?.value || __DEFAULT_SERVER__).replace(/\/+$/, "")}/install | sh`, $("copyLabel"));
+$("signin").onclick = async () => {
+  $("pairError").hidden = true;
+  const r = await send<any>({ type: "acm:connect-start", server: __DEFAULT_SERVER__, name: $<HTMLInputElement>("pname").value.trim() || "Chrome" });
+  if (r?.error) {
+    $("pairError").hidden = false;
+    $("pairError").textContent = r.error;
+  }
+  render();
+};
 $("copyPrompt").onclick = (e) => copy("Use agent-chrome to open news.ycombinator.com and take a screenshot", (e.currentTarget as HTMLElement).querySelector(".copy") as HTMLElement);
 
 chrome.runtime.onMessage.addListener((m) => m?.type === "acm:status-changed" && render());
 render();
 setInterval(render, 2000);
-code.focus();
+$("pname").focus();
 export {};
