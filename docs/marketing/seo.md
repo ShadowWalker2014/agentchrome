@@ -14,8 +14,10 @@
 - Bing Webmaster Tools: added https://agentchrome.dev/ (DNS CNAME verification) and submitted the sitemap.
 - Claude directory: connector submitted for review under Circo, Inc. Reviewer key is in ~/.agentchrome-registry/claude-reviewer-key.txt.
 - ChatGPT plugin: uploaded 0.1.1 at https://platform.openai.com/plugins/manage/plugin_asdk_app_6aeb8096f22c8191979b97930ed83cf8 under Circo, Inc. (OpenAI's upload 404 was fixed on their side). Domain verified (token in KV config:openai_apps_challenge), OAuth connected with the reviewer account, scan done with no blocking findings, review information saved. Fixed two scan findings: handle_dialog is now destructive, and chat apps get a read-only screenshot without save. Submitted for review on 2026-11-04 (status: Version 0.1.1 · In review).
+- Chrome Web Store: 0.1.1 submitted for review on 2026-11-04 (status Pending review, auto-publish on approval). Item ID gpjbibfjaccdeaaflnkgglalhikbhmpj, dashboard https://chrome.google.com/webstore/devconsole/563afed3-261c-4e3e-a2e1-faecaf496320/gpjbibfjaccdeaaflnkgglalhikbhmpj/edit, public page after approval https://chromewebstore.google.com/detail/gpjbibfjaccdeaaflnkgglalhikbhmpj. Publisher Circo, Inc. (non-trader), contact support@agentchrome.dev. Disclosed data: personal info (profile email), authentication, web history, user activity, website content. Chrome blocks extensions on Web Store pages, so the dashboard was driven with AppleScript JavaScript.
 
 ## To do
 
+- When the Web Store approves the item, change "load unpacked" in README and docs/marketing/content-brief.md to the store link.
 - Every week, check Search Console queries and pages, and check the AI Overview with `google_serp` for "chrome mcp server", "claude code chrome", "codex chrome extension" and "playwright mcp vs chrome devtools mcp".
 - List on Smithery, Glama, mcp.so and mcpservers.org.
