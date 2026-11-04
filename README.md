@@ -180,7 +180,7 @@ The tool names match Claude in Chrome, so prompts and skills written for it work
 | `tab_groups` | Lists, creates, renames, recolors, collapses, moves or ungroups Chrome tab groups |
 | `navigate` | Loads a URL and waits for it; also takes `back`, `forward` and `reload` |
 | `computer` | `screenshot`, `left_click`, `right_click`, `middle_click`, `double_click`, `triple_click`, `hover` / `mouse_move`, `left_click_drag` (HTML5 and pointer drags; `start_ref` or `start_coordinate`), `type`, `key` (combos like `cmd+a`), `scroll`, `scroll_to`, `wait`, `zoom`. Accepts coordinates or element refs, plus `modifiers` |
-| `screenshot` | Captures the viewport or the full page, JPEG or PNG; `save: true` returns a download link |
+| `screenshot` | Captures the viewport, or with `fullPage: true` one long image of the whole page. It scrolls through first so lazy images load, and stitches apps that scroll inside a panel, such as Gmail, Notion and dashboards. JPEG or PNG; `save: true` returns a download link |
 | `read_page` | Returns an accessibility tree with `ref_N` handles; `filter: "interactive"`, `ref_id` to read a subtree, `viewportOnly` |
 | `find` | Finds elements from a plain-language description and returns refs with coordinates |
 | `form_input` | Sets inputs, selects, checkboxes, radios and contenteditable fields by ref |
@@ -188,7 +188,7 @@ The tool names match Claude in Chrome, so prompts and skills written for it work
 | `javascript_tool` | Runs JavaScript in the page and returns the last expression; supports `await` and works under strict CSP |
 | `read_console_messages` / `read_network_requests` | Returns console logs and errors, and requests with status and timing; can include response bodies |
 | `file_upload` / `upload_image` | Fills a file input or drop zone with local file paths, base64 data, a URL or a screenshot, without the native file picker; leave out `ref` to fill a picker that a click tried to open |
-| `record` | Records an **MP4 or WebM clip** of the tab and returns a link. `cursor`: `natural` (default, no indicators), `agent` or `hidden`; `showClicks` adds click ripples |
+| `record` | Records an **MP4 or WebM clip** of the tab and returns a link. `cursor`: `natural` (default, no indicators), `agent` or `hidden`; `showClicks` adds click ripples. `action: "scroll"` makes a smooth scrolling video of the whole page in one call |
 | `gif_creator` | Records an animated GIF and returns it inline |
 | `wait_for` | Waits until text appears or disappears, a CSS selector matches, or the URL matches |
 | `handle_dialog` | Accepts or dismisses `alert`, `confirm` and `prompt` dialogs |
@@ -203,8 +203,8 @@ The tool names match Claude in Chrome, so prompts and skills written for it work
 | Works with any MCP agent | Claude only | Codex only | **yes** |
 | Tab group per agent session | yes | yes | **yes**, and the agent can rename and recolor it |
 | Several Chrome profiles at once | one connected browser at a time | one profile | **yes, all at once** |
-| Screenshots | yes | yes | **yes**, including full-page and zoom |
-| Video recording | GIF | no | **MP4 or WebM, plus GIF** |
+| Screenshots | yes | yes | **yes**, including zoom and long full-page images (also inside scrolling panels) |
+| Video recording | GIF | no | **MP4 or WebM, plus GIF and one-call scrolling videos** |
 | Console, network, JavaScript | yes | yes | **yes** |
 | Per-site permission prompt | yes | yes | **yes**, off by default; also a block list |
 | Visible "agent at work" indicator | yes | yes | **pulsing border, status pill and Stop button** |

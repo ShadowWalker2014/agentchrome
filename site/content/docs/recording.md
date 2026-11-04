@@ -13,7 +13,7 @@ Agent Chrome has three capture tools: `screenshot` for still images, `record` fo
 
 ## Screenshots
 
-`screenshot` captures the viewport or the whole scrollable page, as JPEG (the default) or PNG.
+`screenshot` captures the viewport, or with `fullPage: true` one long image of the whole page. It scrolls through first so lazy images load, and stitches apps that scroll inside a panel, such as Gmail, Notion and dashboards. It saves as JPEG (the default) or PNG, up to 16,000 CSS px tall.
 
 ```json
 { "name": "screenshot", "arguments": { "fullPage": true, "format": "png", "save": true } }
@@ -90,4 +90,7 @@ Cloud files are deleted after 7 days. In local mode they stay in `~/.agentchrome
 `record` produces MP4 or WebM video files. `gif_creator` records browser actions and exports an animated GIF that is returned inline.
 
 ### Can I take a full-page screenshot?
-Yes. Pass `fullPage: true` to `screenshot`. Add `save: true` for a download link.
+Yes. Pass `fullPage: true` to `screenshot` for one long image. It loads lazy images first and also works on apps that scroll inside a panel. Add `save: true` for a download link.
+
+### Can I record a scrolling video of a page?
+Yes. Call `record` with `action: "scroll"`. It jumps to the top, records a smooth, steady scroll to the bottom and returns the MP4. Set `speed` in pixels per second (default 700) and `to: "top"` to scroll up instead.

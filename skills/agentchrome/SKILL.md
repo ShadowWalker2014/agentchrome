@@ -28,7 +28,8 @@ The `agentchrome` MCP server controls the user's own Chrome through an extension
 
 ## Evidence
 
-- `screenshot fullPage=true save=true` returns the image plus a download URL.
+- `screenshot fullPage=true save=true` returns one long image of the whole page (lazy images loaded, scrolling panels stitched) plus a download URL.
+- `record action=scroll` returns a smooth scrolling video of the whole page in one call (`speed` px/s, default 700).
 - `record action=start` … do the flow … `record action=stop` returns an MP4/WebM URL (cloud) or file path (local). Clicks are highlighted.
 - `gif_creator` records a short GIF and returns it inline.
 - `read_console_messages onlyErrors=true` and `read_network_requests urlPattern=/api/` for debugging.

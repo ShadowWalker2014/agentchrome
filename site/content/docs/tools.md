@@ -69,7 +69,7 @@ These tools run on the server and are in both tool sets.
 | `read_page` | `filter` (`interactive` or `all`), `depth`, `ref_id`, `max_chars`, `viewportOnly`, `tabId` | Returns an accessibility tree. Each element has a role, a name and a `ref_N` handle. `max_chars` defaults to 50000, `depth` to 25. |
 | `find` | `query` (required), `limit`, `tabId` | Finds elements from a plain-language description and returns up to 20 matches with refs and coordinates. |
 | `get_page_text` | `max_chars`, `tabId` | Returns the readable text of the article or main content, plus title and URL. |
-| `screenshot` | `fullPage`, `format` (`jpeg` or `png`), `save`, `tabId` | Captures the viewport or the whole page. `save: true` also stores it and returns a download URL (cloud) or a file path (local). |
+| `screenshot` | `fullPage`, `format` (`jpeg` or `png`), `save`, `tabId` | Captures the viewport, or with `fullPage: true` one long image of the whole page. It scrolls through first so lazy images load, and stitches apps that scroll inside a panel, such as Gmail, Notion and dashboards. Pages are capped at 16,000 CSS px. `save: true` also stores it and returns a download URL (cloud) or a file path (local). |
 
 ```json
 { "name": "read_page", "arguments": { "filter": "interactive" } }
@@ -138,7 +138,7 @@ These tools run on the server and are in both tool sets.
 
 | Tool | Parameters | What it does |
 |---|---|---|
-| `record` | `action` (`start`, `stop`, `status`), `fps`, `format` (`mp4`, `webm`), `filename`, `download`, `cursor` (`natural`, `agent`, `hidden`), `showClicks`, `tabId` | Records an MP4 or WebM clip. `stop` returns a download URL (cloud) or file path (local). `fps` defaults to 15, `cursor` to `natural`. Maximum length is 10 minutes. |
+| `record` | `action` (`start`, `stop`, `status`, `scroll`), `to` (`bottom`, `top`), `speed` (px per second, default 700), `fps`, `format` (`mp4`, `webm`), `filename`, `download`, `cursor` (`natural`, `agent`, `hidden`), `showClicks`, `tabId` | Records an MP4 or WebM clip. `stop` returns a download URL (cloud) or file path (local). `fps` defaults to 15, `cursor` to `natural`. `scroll` records a smooth scroll through the whole page and returns the clip in one call. Maximum length is 10 minutes. |
 | `gif_creator` | `action` (`start_recording`, `stop_recording`, `export`, `clear`), `cursor`, `showClicks`, `filename`, `download`, `tabId` | Records browser actions and exports an animated GIF. |
 
 See [recording](/docs/recording) for details.

@@ -493,7 +493,8 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
     const tabId = await resolveTab(session, a.tabId);
     const s = await page.screenshot(tabId, { format: a.format, fullPage: a.fullPage });
     const blocks: ContentBlock[] = [{ type: "image", data: s.base64, mimeType: s.mimeType }];
-    let note = `Screenshot of tab ${tabId} (${s.width}x${s.height}${a.fullPage ? ", full page" : ""}, imageId ${s.imageId}).`;
+    let note = `Screenshot of tab ${tabId} (${s.width}x${s.height}${a.fullPage ? `, full page${s.inner ? " of the page's scrolling panel, stitched" : ""}` : ""}, imageId ${s.imageId}).`;
+    if (s.truncated) note += ` The page is taller than ${s.cssHeight}px, so the image stops there.`;
     if (a.save) {
       const saved = await uploadArtifact(page.b64ToBytes(s.base64).slice(0, undefined, s.mimeType), `screenshot-${Date.now()}.${a.format === "png" ? "png" : "jpg"}`);
       note += ` Saved: ${saved.url}${saved.path ? `\nFile: ${saved.path}` : ""}`;
@@ -670,6 +671,23 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
           `Recording tab ${tabId} (${r.mimeType}, ${r.fps} fps, ${cursor} cursor${cursor === "agent" ? "" : "; the border, status pill and name tag are hidden from the clip"}). Do the steps, then call record with action=stop.`,
         ),
       );
+    }
+    if (a.action === "scroll") {
+      // Scrolling video: smooth, steady scroll through the page. Records a whole clip unless a recording is already running.
+      const speed = Math.max(100, Math.min(4000, Number(a.speed) || 700));
+      const to = a.to === "top" ? "top" : "bottom";
+      const own = !rec.recordingSince(tabId);
+      if (own) {
+        if (a.fromStart !== false) await page.scrollerSet(tabId, to === "bottom" ? 0 : 1e9).catch(() => {});
+        const cursor = a.cursor === "agent" || a.cursor === "natural" ? a.cursor : "hidden";
+        await rec.startRecording(tabId, { kind: "video", fps: a.fps ?? 30, format: a.format, cursor });
+        await overlayWorking(tabId, session);
+        await new Promise((r) => setTimeout(r, 700));
+      }
+      const s = await page.smoothScroll(tabId, { to, speed, maxMs: 150_000 });
+      if (!own) return ok(text(`Scrolled smoothly from ${Math.round(s.from)} to ${Math.round(s.to)} in ${(s.ms / 1000).toFixed(1)}s while recording.`));
+      await new Promise((r) => setTimeout(r, 900));
+      a = { ...a, action: "stop" };
     }
     if (a.action === "stop") {
       const r = await rec.stopRecording(tabId, { filename: a.filename, download: a.download });

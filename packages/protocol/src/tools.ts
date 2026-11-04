@@ -192,7 +192,7 @@ export const TOOLS: ToolDef[] = [
     name: "screenshot",
     title: "Screenshot",
     description:
-      "Capture a screenshot of a tab. fullPage captures the whole scrollable page. Set save=true to also store it and get a download URL.",
+      "Capture a screenshot of a tab. fullPage=true captures one long image of the whole page: it scrolls through first so lazy images load, and on apps that scroll inside a panel (Gmail, Notion, dashboards) it stitches that panel. Up to 16,000 CSS px tall. Set save=true to also store it and get a download URL.",
     inputSchema: obj({
       tabId,
       fullPage: { type: "boolean" },
@@ -330,21 +330,24 @@ export const TOOLS: ToolDef[] = [
     name: "record",
     title: "Record video",
     description:
-      "Record a video clip of a tab. action=start begins, action=stop finishes and returns a download URL (cloud) or file path (local) for an MP4 or WebM file, action=status reports progress. The clip looks like a person using the page: the blue border, status pill and the cursor's name tag are left out, and the cursor is a normal arrow that turns into a hand over links and an I-beam over text (cursor=natural, the default). Use cursor=agent to show the agent cursor and indicators, or cursor=hidden for no cursor. The toolbar icon shows REC meanwhile. Max length 10 minutes.",
+      "Record a video clip of a tab. action=start begins, action=stop finishes and returns a download URL (cloud) or file path (local) for an MP4 or WebM file, action=status reports progress. action=scroll makes a scrolling video in one call: it goes to the top, records a smooth, steady scroll to the bottom (to, speed in px per second, default 700) and returns the clip; during a running recording it only does the smooth scroll. The clip looks like a person using the page: the blue border, status pill and the cursor's name tag are left out, and the cursor is a normal arrow that turns into a hand over links and an I-beam over text (cursor=natural, the default). Use cursor=agent to show the agent cursor and indicators, or cursor=hidden for no cursor. The toolbar icon shows REC meanwhile. Max length 10 minutes.",
     inputSchema: obj(
       {
-        action: { type: "string", enum: ["start", "stop", "status"] },
+        action: { type: "string", enum: ["start", "stop", "status", "scroll"] },
         tabId,
-        fps: { type: "number", description: "Frames per second, default 15." },
+        fps: { type: "number", description: "Frames per second, default 15 (30 for action=scroll)." },
+        to: { type: "string", enum: ["bottom", "top"], description: "action=scroll: direction. Default bottom." },
+        speed: { type: "number", minimum: 100, maximum: 4000, description: "action=scroll: pixels per second. Default 700." },
+        fromStart: { type: "boolean", description: "action=scroll: jump to the top (or bottom) first. Default true." },
         format: { type: "string", enum: ["mp4", "webm"], description: "Default mp4 when Chrome supports it." },
         filename: { type: "string" },
         download: { type: "boolean", description: "Also save into the browser's Downloads folder." },
-        cursor: { type: "string", enum: ["natural", "agent", "hidden"], description: "How the cursor looks in the clip. Default natural." },
+        cursor: { type: "string", enum: ["natural", "agent", "hidden"], description: "How the cursor looks in the clip. Default natural (hidden for action=scroll)." },
         showClicks: { type: "boolean", description: "Draw a soft ripple where clicks land. Default false." },
       },
       ["action"],
     ),
-    timeoutMs: 120_000,
+    timeoutMs: 200_000,
   },
   {
     name: "gif_creator",

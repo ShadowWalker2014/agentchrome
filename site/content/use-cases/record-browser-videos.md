@@ -23,9 +23,9 @@ With Agent Chrome the agent does the clicking and the recording in one session. 
 
 | Tool | Output | Good for |
 |---|---|---|
-| `record` | MP4 or WebM clip, returned as a download URL (cloud) or a file path (local) | Demos, bug reports, pull request proof |
+| `record` | MP4 or WebM clip, returned as a download URL (cloud) or a file path (local) | Demos, bug reports, pull request proof. `action: "scroll"` returns a smooth scrolling video of a whole page in one call |
 | `gif_creator` | Animated GIF, returned inline | Short loops for READMEs and docs |
-| `screenshot` | JPEG or PNG, viewport or full page; `save: true` returns a link | Still images |
+| `screenshot` | JPEG or PNG, viewport or one long full-page image (also inside scrolling panels); `save: true` returns a link | Still images |
 
 The recording limit is 10 minutes. On the hosted server the files are kept on R2 for 7 days. In local mode they are saved to `~/.agentchrome/artifacts`.
 

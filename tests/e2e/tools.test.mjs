@@ -213,6 +213,36 @@ test("screenshot fullPage + save returns a download URL", async () => {
   assert.equal(res.headers.get("content-type"), "image/jpeg");
 });
 
+test("screenshot fullPage loads lazy content and stitches pages that scroll inside a panel", async () => {
+  await mcp.call("navigate", { url: `${fixture.url}/long` });
+  const long = await mcp.call("screenshot", { fullPage: true });
+  const [, lw, lh] = long.text.match(/\((\d+)x(\d+), full page/).map(Number);
+  assert.ok(lh / lw > 4, `long page image should be tall: ${long.text}`);
+  const lazy = await mcp.call("javascript_tool", { text: "lazy.dataset.loaded + ':' + scrollY" });
+  assert.match(lazy.text, /1:0/, "lazy section loaded and scroll restored");
+
+  await mcp.call("navigate", { url: `${fixture.url}/panel` });
+  const panel = await mcp.call("screenshot", { fullPage: true });
+  assert.match(panel.text, /stitched/, panel.text);
+  const [, pw, ph] = panel.text.match(/\((\d+)x(\d+), full page/).map(Number);
+  assert.ok(ph / pw > 3, `panel image should include all 25 rows: ${panel.text}`);
+});
+
+test("record action=scroll returns a smooth scrolling video of the whole page", async () => {
+  await mcp.call("navigate", { url: `${fixture.url}/long` });
+  const r = await mcp.call("record", { action: "scroll", speed: 2500 });
+  assert.match(r.text, /Recorded \d+\.\ds/, r.text);
+  const secs = Number(r.text.match(/Recorded (\d+\.\d)s/)[1]);
+  assert.ok(secs >= 2, `clip covers the scroll: ${secs}s`);
+  const url = r.text.match(/URL: (\S+)/)?.[1];
+  assert.ok(url, r.text);
+  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+  assert.ok(buf.length > 10_000, `video bytes ${buf.length}`);
+  const pos = await mcp.call("javascript_tool", { text: "Math.round(scrollY + innerHeight) >= document.documentElement.scrollHeight - 2" });
+  assert.match(pos.text, /true/, "ended at the bottom");
+  await mcp.call("navigate", { url: fixture.url });
+});
+
 test("tabs_create, tabs_select, tabs_close stay inside the group", async () => {
   const r = await mcp.call("tabs_create", { url: `${fixture.url}/second` });
   const created = JSON.parse(r.text).created;

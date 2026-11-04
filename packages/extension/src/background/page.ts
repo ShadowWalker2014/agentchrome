@@ -144,7 +144,7 @@ async function captureRaw(tabId: number, params: Record<string, unknown>): Promi
 export async function screenshot(
   tabId: number,
   opts: { format?: "jpeg" | "png"; quality?: number; fullPage?: boolean; hideOverlay?: boolean } = {},
-): Promise<{ base64: string; mimeType: string; width: number; height: number; imageId: string; cssWidth: number; cssHeight: number }> {
+): Promise<{ base64: string; mimeType: string; width: number; height: number; imageId: string; cssWidth: number; cssHeight: number; truncated: boolean; inner: boolean }> {
   const format = opts.format ?? "jpeg";
   const quality = opts.quality ?? 80;
   const mimeType = format === "png" ? "image/png" : "image/jpeg";
@@ -152,15 +152,30 @@ export async function screenshot(
   const vp = await viewport(tabId);
   if (opts.hideOverlay !== false) await tryContent(tabId, "setOverlayVisible", { visible: false });
   let raw: string;
+  let truncated = false;
+  let inner = false;
   let cssW = vp.width;
   let cssH = vp.height;
   try {
     if (opts.fullPage) {
-      const m = await cdp.send(tabId, "Page.getLayoutMetrics");
-      const cs = m.cssContentSize ?? m.contentSize;
-      cssW = Math.ceil(cs.width);
-      cssH = Math.min(Math.ceil(cs.height), 16_000);
-      raw = await captureRaw(tabId, { format, quality, captureBeyondViewport: true, clip: { x: 0, y: 0, width: cssW, height: cssH, scale: 1 } });
+      const sc = await scroller(tabId);
+      await preloadScroll(tabId, sc);
+      if (sc.inner) {
+        inner = true;
+        const r = await stitchInner(tabId, sc, vp, format, quality);
+        raw = r.raw;
+        cssW = r.width;
+        cssH = r.height;
+        truncated = r.truncated;
+      } else {
+        const m = await cdp.send(tabId, "Page.getLayoutMetrics");
+        const cs = m.cssContentSize ?? m.contentSize;
+        cssW = Math.ceil(cs.width);
+        truncated = Math.ceil(cs.height) > FULL_PAGE_MAX;
+        cssH = Math.min(Math.ceil(cs.height), FULL_PAGE_MAX);
+        raw = await captureRaw(tabId, { format, quality, captureBeyondViewport: true, clip: { x: 0, y: 0, width: cssW, height: cssH, scale: 1 } });
+      }
+      await scrollerSet(tabId, sc.top);
     } else {
       raw = await captureRaw(tabId, { format, quality });
     }
@@ -176,7 +191,149 @@ export async function screenshot(
   const imageId = `img_${++imageSeq}`;
   images.set(imageId, { base64, mimeType });
   if (images.size > 20) images.delete(images.keys().next().value!);
-  return { base64, mimeType, width, height, imageId, cssWidth: cssW, cssHeight: cssH };
+  return { base64, mimeType, width, height, imageId, cssWidth: cssW, cssHeight: cssH, truncated, inner };
+}
+
+// ---------------- scrolling capture ----------------
+
+const FULL_PAGE_MAX = 16_000;
+
+export interface Scroller {
+  /** true when the page scrolls inside an element (Gmail, Notion, dashboards) instead of the document. */
+  inner: boolean;
+  top: number;
+  scrollHeight: number;
+  clientHeight: number;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
+// Finds what actually scrolls: the document, or else the largest visible scrollable element. Remembers it on window.
+const SCROLLER_JS = `(() => {
+  const se = document.scrollingElement || document.documentElement;
+  let el = null;
+  if (se.scrollHeight - innerHeight < 8) {
+    let area = 0;
+    for (const n of document.querySelectorAll("body *")) {
+      if (n.scrollHeight - n.clientHeight < 40 || n.clientHeight < 80) continue;
+      const oy = getComputedStyle(n).overflowY;
+      if (!/(auto|scroll|overlay)/.test(oy)) continue;
+      const r = n.getBoundingClientRect();
+      const a = Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
+      if (a > area) { area = a; el = n; }
+    }
+  }
+  window.__acmScroller = el;
+  if (!el) return { inner: false, top: scrollY, scrollHeight: se.scrollHeight, clientHeight: innerHeight, rect: { x: 0, y: 0, width: innerWidth, height: innerHeight } };
+  const r = el.getBoundingClientRect();
+  return { inner: true, top: el.scrollTop, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, rect: { x: Math.max(0, r.left), y: Math.max(0, r.top), width: Math.min(r.width, innerWidth), height: Math.min(el.clientHeight, innerHeight - Math.max(0, r.top)) } };
+})()`;
+
+async function evalPage<T>(tabId: number, expression: string): Promise<T> {
+  const r = await cdp.send(tabId, "Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
+  return r.result.value as T;
+}
+
+export const scroller = (tabId: number) => evalPage<Scroller>(tabId, SCROLLER_JS);
+
+/** Scrolls the remembered scroller to y (instantly) and returns the position it really reached and the current height. */
+export function scrollerSet(tabId: number, y: number) {
+  return evalPage<{ top: number; scrollHeight: number }>(
+    tabId,
+    `(async () => { const el = window.__acmScroller; const t = el || document.scrollingElement || document.documentElement;
+      t.style && (t.dataset.acmSb = t.style.scrollBehavior, t.style.scrollBehavior = "auto");
+      if (el) el.scrollTop = ${Math.round(y)}; else window.scrollTo({ top: ${Math.round(y)}, behavior: "instant" });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      t.style && (t.style.scrollBehavior = t.dataset.acmSb || "");
+      return { top: el ? el.scrollTop : scrollY, scrollHeight: (el || document.scrollingElement || document.documentElement).scrollHeight }; })()`,
+  );
+}
+
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Walks down the page once so lazy-loaded images and infinite lists render before a full-page capture. */
+async function preloadScroll(tabId: number, sc: Scroller) {
+  let y = 0;
+  for (let i = 0; i < 40; i++) {
+    const r = await scrollerSet(tabId, y);
+    await pause(120);
+    if (r.top + sc.clientHeight >= r.scrollHeight - 2 || y >= FULL_PAGE_MAX) break;
+    y = r.top + sc.clientHeight * 0.9;
+  }
+  await scrollerSet(tabId, 0);
+  await pause(250);
+}
+
+/** Full-page image of a page that scrolls inside an element: captures one viewport per step and stitches the slices. */
+async function stitchInner(tabId: number, sc: Scroller, vp: { width: number; height: number }, format: string, quality: number) {
+  const fresh = await scroller(tabId);
+  const rect = fresh.rect;
+  const total = Math.min(fresh.scrollHeight, FULL_PAGE_MAX);
+  const below = Math.max(0, vp.height - (rect.y + rect.height));
+  const width = Math.round(vp.width);
+  const height = Math.round(rect.y + total + below);
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d")!;
+  const shot = async () => createImageBitmap(b64ToBlob(await captureRaw(tabId, { format: "png", clip: { x: 0, y: 0, width: vp.width, height: vp.height, scale: 1 } }), "image/png"));
+  let y = 0;
+  // Hide scrollbars, or the thumb shows up once per slice.
+  await evalPage(tabId, `(() => { const s = document.createElement("style"); s.id = "acm-noscrollbar"; s.textContent = "*{scrollbar-width:none!important}*::-webkit-scrollbar{display:none!important}"; document.documentElement.append(s); })()`);
+  let last: ImageBitmap | null = null;
+  let k = 1;
+  for (let i = 0; i < 60; i++) {
+    const r = await scrollerSet(tabId, y);
+    await pause(150);
+    const bmp = await shot();
+    // The capture is in device pixels (2x on Retina); the canvas is in CSS pixels.
+    k = bmp.width / vp.width;
+    if (i === 0) ctx.drawImage(bmp, 0, 0, bmp.width, bmp.height, 0, 0, width, vp.height);
+    const h = Math.min(rect.height, total - r.top);
+    if (h > 0) ctx.drawImage(bmp, rect.x * k, rect.y * k, rect.width * k, h * k, rect.x, rect.y + r.top, rect.width, h);
+    last?.close();
+    last = bmp;
+    if (r.top + rect.height >= total - 1) break;
+    y = r.top + rect.height;
+  }
+  await evalPage(tabId, `document.getElementById("acm-noscrollbar")?.remove()`).catch(() => {});
+  if (last && below > 0) ctx.drawImage(last, 0, (vp.height - below) * k, last.width, below * k, 0, height - below, width, below);
+  last?.close();
+  const blob = await canvas.convertToBlob({ type: format === "png" ? "image/png" : "image/jpeg", quality: quality / 100 });
+  return { raw: await blobToB64(blob), width, height, truncated: fresh.scrollHeight > FULL_PAGE_MAX };
+}
+
+/**
+ * Scrolls smoothly at a steady speed (CSS px per second) to the bottom or top, following content that loads on the way.
+ * Runs inside the page with requestAnimationFrame, so a recording sees continuous motion.
+ */
+export async function smoothScroll(tabId: number, opts: { to: "bottom" | "top"; speed: number; maxMs: number }) {
+  await scroller(tabId);
+  return evalPage<{ from: number; to: number; ms: number }>(
+    tabId,
+    `new Promise((done) => {
+      const el = window.__acmScroller; const t = el || document.scrollingElement || document.documentElement;
+      const get = () => (el ? el.scrollTop : scrollY);
+      const set = (y) => (el ? (el.scrollTop = y) : window.scrollTo({ top: y, behavior: "instant" }));
+      const end = () => ${opts.to === "top" ? "0" : "t.scrollHeight - (el ? el.clientHeight : innerHeight)"};
+      const prev = t.style.scrollBehavior; t.style.scrollBehavior = "auto";
+      const from = get(); let y = from; const t0 = performance.now(); let tl = t0;
+      const dir = ${opts.to === "top" ? -1 : 1};
+      const step = (now) => {
+        const dt = Math.min(64, now - tl); tl = now;
+        const ramp = Math.min(1, (now - t0) / 500);
+        const left = Math.abs(end() - y);
+        const ease = Math.min(1, left / ${opts.speed * 0.35} + 0.15);
+        y += dir * ${opts.speed} * (dt / 1000) * ramp * ease;
+        const target = end();
+        if ((dir > 0 && y >= target) || (dir < 0 && y <= target) || now - t0 > ${opts.maxMs}) {
+          set(target); t.style.scrollBehavior = prev; return done({ from, to: get(), ms: Math.round(now - t0) });
+        }
+        set(y); requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+      // A hidden tab never paints, so requestAnimationFrame never fires: finish anyway.
+      setTimeout(() => { set(end()); t.style.scrollBehavior = prev; done({ from, to: get(), ms: ${opts.maxMs} }); }, ${opts.maxMs + 1500});
+    })`,
+  );
 }
 
 export async function zoom(tabId: number, region: number[]) {

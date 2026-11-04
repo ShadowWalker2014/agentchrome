@@ -19,6 +19,16 @@ export function startFixture() {
       res.writeHead(200, { "content-type": "application/json" });
       return res.end(JSON.stringify({ ok: true, n: 7 }));
     }
+    if (req.url === "/long") {
+      res.setHeader("content-type", "text/html");
+      // A tall document with a lazy section at the bottom that only fills in once scrolled into view.
+      return res.end(`<!doctype html><title>Long</title><body style="margin:0;font:20px sans-serif">${Array.from({ length: 30 }, (_, i) => `<section style="height:200px;background:hsl(${i * 12},70%,80%)">Section ${i + 1}</section>`).join("")}<div id="lazy" style="height:300px">waiting</div><script>new IntersectionObserver((e)=>{if(e[0].isIntersecting){lazy.textContent="loaded";lazy.dataset.loaded="1"}}).observe(lazy)</script></body>`);
+    }
+    if (req.url === "/panel") {
+      res.setHeader("content-type", "text/html");
+      // An app layout: fixed header, and the content scrolls inside a panel, not the document (like Gmail or Notion).
+      return res.end(`<!doctype html><title>Panel</title><body style="margin:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;font:20px sans-serif"><header style="height:60px;background:#111;color:#fff">App header</header><main id="m" style="flex:1;overflow:auto">${Array.from({ length: 25 }, (_, i) => `<div style="height:240px;background:hsl(${i * 14},70%,80%)">Row ${i + 1}</div>`).join("")}</main></body>`);
+    }
     if (req.url === "/edge") {
       res.writeHead(200, { "content-type": "text/html" });
       return res.end(readFileSync(join(here, "fixtures/edge.html")));
