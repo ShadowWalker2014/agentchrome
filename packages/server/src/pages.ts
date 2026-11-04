@@ -23,31 +23,51 @@ button.primary{background:var(--primary);color:var(--on-primary);box-shadow:none
 .client{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);margin:16px 0}
 .scopes{margin:12px 0 0;padding-left:18px;color:var(--muted);font-size:13.5px}.scopes li{margin:3px 0}
 .err{color:#E5484D;font-size:13px;margin-top:10px}
+.divider{display:flex;align-items:center;gap:12px;margin:22px 0 12px;color:var(--muted);font-size:12.5px}.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+button.ghost{width:100%;flex:none}
+.keybox{display:flex;align-items:center;gap:8px;padding:10px 10px 10px 14px;border-radius:10px;box-shadow:inset 0 0 0 1px var(--line);background:var(--bg);margin:6px 0 16px}
+.keybox code{flex:1;background:none;box-shadow:none;padding:0;word-break:break-all;font-size:12.5px}
+.keybox .copy{flex:none;height:30px;padding:0 12px}
 code{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--hover);box-shadow:inset 0 0 0 1px var(--line);padding:1px 6px;border-radius:5px}
 </style></head><body><main class="card"><div class="brand">${LOGO_SVG}<span>Agent Chrome MCP</span></div>${body}</main></body></html>`;
   return new Response(html, {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "x-frame-options": "DENY",
-      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; frame-ancestors 'none'",
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'sha256-TJ7ojLxLIPg7MM8NkXC0xR2sFEDO14tQr7rJ6wuXK7o='; form-action 'self' https: http://localhost:* http://127.0.0.1:*; frame-ancestors 'none'",
       "referrer-policy": "no-referrer",
     },
   });
 }
 
-export function authorizePage(clientName: string, redirectHost: string, error?: string) {
+export function authorizePage(clientName: string, redirectHost: string, error?: string, canSignUp = true) {
   return page(
     "Authorize",
     `<h1>Connect ${esc(clientName)}</h1>
-<p>This app wants to control the Chrome profiles paired with your Agent Chrome MCP account.</p>
-<div class="client"><strong>${esc(clientName)}</strong><span style="color:var(--muted);font-size:13px">→ ${esc(redirectHost)}</span></div>
-<ul class="scopes"><li>Open, read and control tabs in its own tab group</li><li>Take screenshots and record video clips</li><li>Run JavaScript on pages it opens</li></ul>
+<p>${esc(clientName)} wants to control the Chrome profiles connected to your Agent Chrome account.</p>
+<div class="client"><strong>${esc(clientName)}</strong><span style="color:var(--muted);font-size:13px">${esc(redirectHost)}</span></div>
+<ul class="scopes"><li>Open, read and click in tabs, inside its own tab group</li><li>Take screenshots and record video clips</li><li>Run JavaScript on pages it opens</li></ul>
 <form method="POST">
 <label for="key">Account key</label>
-<input id="key" name="api_key" type="password" autocomplete="off" placeholder="acm_sk_…" required autofocus>
-<p style="font-size:12.5px;margin-top:8px">Find it with <code>agent-chrome-mcp key</code>, or in <code>~/.config/agent-chrome-mcp/config.json</code>.</p>
+<input id="key" name="api_key" type="password" autocomplete="off" placeholder="acm_sk_…" autofocus>
+<p style="font-size:12.5px;margin-top:8px">Run <code>agent-chrome-mcp key</code> to print it, or find it in <code>~/.config/agent-chrome-mcp/config.json</code>.</p>
 ${error ? `<div class="err">${esc(error)}</div>` : ""}
-<div class="row"><button type="submit" name="decision" value="deny">Cancel</button><button class="primary" type="submit" name="decision" value="allow">Authorize</button></div>
+<div class="row"><button type="submit" name="decision" value="deny" formnovalidate>Cancel</button><button class="primary" type="submit" name="decision" value="allow">Authorize</button></div>
+${canSignUp ? `<div class="divider"><span>New to Agent Chrome?</span></div><button class="ghost" type="submit" name="decision" value="create" formnovalidate>Create an account</button>` : ""}
+</form>`,
+  );
+}
+
+export function newKeyPage(clientName: string, redirectHost: string, apiKey: string) {
+  return page(
+    "Your account key",
+    `<h1>Your account is ready</h1>
+<p>This is your account key. Save it in your password manager. You need it to sign in again and to set up the command line tool, and it is not shown again.</p>
+<div class="keybox"><code id="k">${esc(apiKey)}</code><button type="button" class="copy">Copy</button></div><script>document.querySelectorAll('.copy').forEach(function(b){b.onclick=function(){navigator.clipboard.writeText(document.getElementById('k').textContent);b.textContent='Copied'}})</script>
+<p style="font-size:13px">Next, ${esc(clientName)} can give you a pairing code for Chrome. Just ask it to "connect my Chrome".</p>
+<form method="POST">
+<input type="hidden" name="api_key" value="${esc(apiKey)}">
+<div class="row"><button class="primary" type="submit" name="decision" value="allow">I saved it, connect ${esc(clientName)}</button></div>
 </form>`,
   );
 }

@@ -117,6 +117,17 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
       const list = s.devices.map((d) => ({ id: d.id, name: conns.get(d.id)?.name ?? d.name, email: conns.get(d.id)?.email, online: conns.has(d.id) }));
       return { content: [{ type: "text", text: list.length ? JSON.stringify(list, null, 2) : "No browsers paired. Run `agent-chrome-mcp pair --local`." }] };
     }
+    if (name === "pairing_code") {
+      const { code, expiresAt } = localPairCode();
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Pairing code: ${code} (single use, valid until ${new Date(expiresAt).toISOString()}).\nIn the Agent Chrome extension popup, set Server to ${origin}, paste the code and press Connect.`,
+          },
+        ],
+      };
+    }
     if (name === "select_browser") {
       const c = pick(String(args.browser), session.id);
       selection.set(session.id, c.deviceId);

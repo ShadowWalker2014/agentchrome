@@ -25,7 +25,7 @@
         <div class="body">
           <h3>Get a pairing code</h3>
           <p class="muted">In a terminal, run this. It also adds the server to every agent on your machine.</p>
-          <button class="cmdline" id="copyCmd" type="button"><span><b>$</b> npx agent-chrome-mcp setup</span><span class="copy" id="copyLabel">Copy</span></button>
+          <button class="cmdline" id="copyCmd" type="button"><span><b>$</b> curl -fsSL https://agent-chrome-mcp.circo.workers.dev/install | sh</span><span class="copy" id="copyLabel">Copy</span></button>
           <p class="muted small">Already set up? Run <code>agent-chrome-mcp pair</code> for a new code.</p>
         </div>
       </li>

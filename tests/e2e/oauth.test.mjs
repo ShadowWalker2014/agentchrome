@@ -78,3 +78,57 @@ test("session ids are bound to the account", async () => {
   const cross = await fetch(`${SERVER}/mcp`, { method: "POST", headers: h(b.apiKey, { "mcp-session-id": sid }), body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }) });
   assert.equal(cross.status, 404);
 });
+
+test("connector sign-in works in a real browser: existing key and new account", async () => {
+  const { chromium } = await import("playwright");
+  const { createServer } = await import("node:http");
+  const hits = [];
+  const cb = createServer((req, res) => { hits.push(req.url); res.end("ok"); });
+  await new Promise((r) => cb.listen(0, "127.0.0.1", r));
+  const redirect = `http://127.0.0.1:${cb.address().port}/callback`;
+  const as = await (await fetch(`${SERVER}/.well-known/oauth-authorization-server`)).json();
+  const root = await fetch(`${SERVER}/.well-known/oauth-protected-resource`);
+  assert.equal(root.status, 200);
+  const reg = await (await fetch(as.registration_endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ client_name: "Claude", redirect_uris: [redirect], token_endpoint_auth_method: "none" }) })).json();
+  const authUrl = () => {
+    const u = new URL(as.authorization_endpoint);
+    const challenge = b64u(createHash("sha256").update("v".repeat(43)).digest());
+    Object.entries({ response_type: "code", client_id: reg.client_id, redirect_uri: redirect, code_challenge: challenge, code_challenge_method: "S256", state: "s1", resource: `${SERVER}/mcp` }).forEach(([k, v]) => u.searchParams.set(k, v));
+    return u.toString();
+  };
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    // existing key
+    const acct = await signup();
+    await page.goto(authUrl());
+    await page.fill("#key", acct.apiKey);
+    await Promise.all([page.waitForURL(/\/callback\?/), page.click("button[value=allow]")]);
+    assert.match(page.url(), /code=[^&]+&state=s1/);
+    // brand-new account from the sign-in page
+    await page.goto(authUrl());
+    await page.click("button[value=create]");
+    const key = await page.textContent("#k");
+    assert.match(key, /^acm_sk_/);
+    await Promise.all([page.waitForURL(/\/callback\?/), page.click("button[value=allow]")]);
+    assert.match(page.url(), /code=/);
+    const me = await (await fetch(`${SERVER}/api/me`, { headers: { authorization: `Bearer ${key}` } })).json();
+    assert.ok(me.accountId);
+  } finally {
+    await browser.close();
+    cb.close();
+  }
+});
+
+test("pairing_code tool returns a working code", async () => {
+  const acct = await signup();
+  const h = { authorization: `Bearer ${acct.apiKey}`, "content-type": "application/json" };
+  const init = await fetch(`${SERVER}/mcp`, { method: "POST", headers: h, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "chatgpt", version: "1" } } }) });
+  const sid = init.headers.get("mcp-session-id");
+  const r = await (await fetch(`${SERVER}/mcp`, { method: "POST", headers: { ...h, "mcp-session-id": sid }, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "pairing_code", arguments: {} } }) })).json();
+  const code = r.result.content[0].text.match(/Pairing code: ([A-Z0-9]{5}-[A-Z0-9]{5})/)[1];
+  const redeem = await fetch(`${SERVER}/api/pair/redeem`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code, name: "From chat" }) });
+  assert.equal(redeem.status, 200);
+  const tools = await (await fetch(`${SERVER}/mcp`, { method: "POST", headers: { ...h, "mcp-session-id": sid }, body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/list" }) })).json();
+  for (const t of tools.result.tools) assert.equal(typeof t.annotations?.readOnlyHint, "boolean", t.name);
+});

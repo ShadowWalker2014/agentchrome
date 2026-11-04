@@ -62,6 +62,14 @@ export const TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "pairing_code",
+    title: "Get a pairing code",
+    server: true,
+    description:
+      "Get a one-time code to connect a Chrome profile to this account. Give the user the code with these steps: install the Agent Chrome extension (download link in the result), click its toolbar icon, paste the code and press Connect. Use this when list_browsers shows no browser, or the user wants to add another Chrome profile.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+  },
+  {
     name: "tabs_context",
     title: "Get session tabs",
     description:
@@ -378,6 +386,18 @@ export const TOOLS: ToolDef[] = [
     annotations: { readOnlyHint: true },
   },
 ];
+
+// Hints for clients that ask before running tools with side effects (ChatGPT, Claude). Every tool acts on the open web.
+const READ_ONLY = new Set(["list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search"]);
+for (const t of TOOLS) {
+  t.annotations = {
+    title: t.title,
+    readOnlyHint: READ_ONLY.has(t.name),
+    destructiveHint: t.name === "tabs_close",
+    idempotentHint: READ_ONLY.has(t.name),
+    openWorldHint: !t.server,
+  };
+}
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 

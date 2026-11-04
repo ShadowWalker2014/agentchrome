@@ -21,7 +21,7 @@ import {
   type Principal,
 } from "./auth";
 import type { Env } from "./env";
-import { authorizePage, page } from "./pages";
+import { authorizePage, newKeyPage, page } from "./pages";
 
 export { AccountHub } from "./hub";
 
@@ -54,7 +54,7 @@ async function limited(limiter: RateLimit | undefined, key: string) {
 
 // ---------- MCP endpoint ----------
 
-async function serverTool(env: Env, accountId: string, name: string, args: Record<string, unknown>, session: SessionInfo): Promise<CallToolResult> {
+async function serverTool(env: Env, accountId: string, name: string, args: Record<string, unknown>, session: SessionInfo, origin: string): Promise<CallToolResult> {
   const hub = hubFor(env, accountId);
   if (name === "list_browsers") {
     const [devices, online] = await Promise.all([listDevices(env, accountId), hub.online()]);
@@ -76,6 +76,18 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
         : JSON.stringify(lines, null, 2);
     return { content: [{ type: "text", text }], structuredContent: { browsers: lines } };
   }
+  if (name === "pairing_code") {
+    const { code, expiresAt } = await createPairCode(env, accountId);
+    const text = [
+      `Pairing code: ${code} (single use, valid until ${new Date(expiresAt).toISOString()}).`,
+      "Steps for the user:",
+      `1. Download the extension: ${origin}/agent-chrome-mcp-extension.zip and unzip it.`,
+      "2. Open chrome://extensions, turn on Developer mode, click Load unpacked and choose the unzipped folder.",
+      `3. Click the Agent Chrome icon in the toolbar, paste ${code} and press Connect.`,
+      "Then call list_browsers to confirm the profile is online.",
+    ].join("\n");
+    return { content: [{ type: "text", text }], structuredContent: { code, expiresAt: new Date(expiresAt).toISOString() } };
+  }
   if (name === "select_browser") {
     const sel = String(args.browser ?? "");
     const online = await hub.online();
@@ -95,7 +107,7 @@ const mcpApi: ExportedHandler<Env> = {
   async fetch(request, env, ctx) {
     const props = (ctx as any).props as Principal;
     if (!props?.accountId) return err(401, "unauthorized");
-    return handleMcpRequest(request, {
+    const res = await handleMcpRequest(request, {
       principal: props.accountId,
       secret: await sessionSecret(env),
       serverName: "agent-chrome-mcp",
@@ -103,10 +115,18 @@ const mcpApi: ExportedHandler<Env> = {
       instructions: SERVER_INSTRUCTIONS,
       async callTool(name, args, session) {
         const def = TOOL_BY_NAME.get(name)!;
-        if (def.server) return serverTool(env, props.accountId, name, args, session);
+        if (def.server) return serverTool(env, props.accountId, name, args, session, new URL(request.url).origin);
         return hubFor(env, props.accountId).call(name, args, session, def.timeoutMs ?? 45_000);
       },
     });
+    // Browser-based MCP clients need to read the session id.
+    if (request.headers.get("origin")) {
+      const h = new Headers(res.headers);
+      h.set("access-control-allow-origin", request.headers.get("origin")!);
+      h.set("access-control-expose-headers", "Mcp-Session-Id, WWW-Authenticate");
+      return new Response(res.body, { status: res.status, headers: h });
+    }
+    return res;
   },
 };
 
@@ -124,7 +144,7 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
       return oauthReq.redirectUri;
     }
   })();
-  if (request.method === "GET") return authorizePage(clientName, redirectHost);
+  if (request.method === "GET") return authorizePage(clientName, redirectHost, undefined, env.SIGNUP_MODE !== "closed");
 
   const form = await request.formData();
   if (form.get("decision") !== "allow") {
@@ -134,6 +154,12 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
     return Response.redirect(u.toString(), 302);
   }
   const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+  if (form.get("decision") === "create") {
+    if (env.SIGNUP_MODE === "closed") return authorizePage(clientName, redirectHost, "Sign-up is closed on this server. Ask its admin for an account key.");
+    if (await limited(env.SIGNUP_LIMITER, `signup:${ip}`)) return authorizePage(clientName, redirectHost, "Too many sign-ups from this address. Try again later.");
+    const acct = await createAccount(env, clientName.slice(0, 40));
+    return newKeyPage(clientName, redirectHost, acct.apiKey);
+  }
   if (await limited(env.PAIR_LIMITER, `auth:${ip}`)) return authorizePage(clientName, redirectHost, "Too many attempts. Wait a minute and try again.");
   const principal = await verifyApiKey(env, String(form.get("api_key") ?? "").trim());
   if (!principal) return authorizePage(clientName, redirectHost, "That account key is not valid.");
@@ -197,6 +223,14 @@ const app: ExportedHandler<Env> = {
     if (path === "/authorize") return handleAuthorize(request, env);
     if (path === "/ws") return handleWebSocket(request, env);
     if (path === "/health") return json({ ok: true, version: VERSION });
+    if (path === "/.well-known/oauth-protected-resource") {
+      // Some clients look for resource metadata at the root instead of under /mcp.
+      return json(
+        { resource: `${origin}/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Agent Chrome MCP", scopes_supported: ["browser"] },
+        200,
+        { "access-control-allow-origin": "*" },
+      );
+    }
 
     if (path === "/api/info") {
       return json({ name: "agent-chrome-mcp", version: VERSION, mcpUrl: `${origin}/mcp`, signup: env.SIGNUP_MODE === "closed" ? "closed" : "open" });

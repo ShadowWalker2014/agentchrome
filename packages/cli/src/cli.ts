@@ -112,6 +112,21 @@ async function ensureExtension(server: string): Promise<string> {
   return dest;
 }
 
+/** Open chrome://extensions in Chrome and show the folder to load, so loading takes two clicks. */
+function openExtensionPage(dir: string) {
+  try {
+    if (process.platform === "darwin") {
+      execFileSync("open", ["-a", "Google Chrome", "chrome://extensions"], { stdio: "ignore" });
+      execFileSync("open", ["-R", join(dir, "manifest.json")], { stdio: "ignore" });
+    } else if (process.platform === "win32") {
+      execFileSync("cmd", ["/c", "start", "chrome", "chrome://extensions"], { stdio: "ignore" });
+      execFileSync("explorer", [dir], { stdio: "ignore" });
+    } else {
+      execFileSync("google-chrome", ["chrome://extensions"], { stdio: "ignore", timeout: 3000 });
+    }
+  } catch {}
+}
+
 function printExtensionSteps(dir: string) {
   console.log(`
 ${bold("Load the Chrome extension")} ${dim("(once per Chrome profile)")}
@@ -161,7 +176,10 @@ async function cmdSetup(flags: Record<string, string | boolean>) {
     warn(String(e.message));
     return null;
   });
-  if (dir) printExtensionSteps(dir);
+  if (dir) {
+    printExtensionSteps(dir);
+    if (!flags["no-open"] && process.stdout.isTTY) openExtensionPage(dir);
+  }
   await cmdPair(flags);
   if (local) console.log(`\n${bold("Start the local server:")} ${cyan("agent-chrome-mcp serve")} ${dim("(or `serve --install` to run it at login)")}`);
   console.log(`\n${bold("Try it:")} ask your agent ${cyan('"Use agent-chrome to open news.ycombinator.com and screenshot it"')}\n`);
@@ -315,6 +333,7 @@ async function cmdExtension(flags: Record<string, string | boolean>) {
   ok(`Extension unpacked to ${dir}`);
   copyToClipboard(dir);
   printExtensionSteps(dir);
+  if (!flags["no-open"]) openExtensionPage(dir);
   if (flags.open) openUrl("https://github.com/ShadowWalker2014/agent-chrome-mcp#install-the-chrome-extension");
 }
 

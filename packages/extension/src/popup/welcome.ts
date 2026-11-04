@@ -88,7 +88,7 @@ const copy = async (text: string, label?: HTMLElement) => {
     setTimeout(() => (label.textContent = "Copy"), 1500);
   }
 };
-$("copyCmd").onclick = () => copy("npx agent-chrome-mcp setup", $("copyLabel"));
+$("copyCmd").onclick = () => copy(`curl -fsSL ${(($("server") as HTMLInputElement)?.value || __DEFAULT_SERVER__).replace(/\/+$/, "")}/install | sh`, $("copyLabel"));
 $("copyPrompt").onclick = (e) => copy("Use agent-chrome to open news.ycombinator.com and take a screenshot", (e.currentTarget as HTMLElement).querySelector(".copy") as HTMLElement);
 
 chrome.runtime.onMessage.addListener((m) => m?.type === "acm:status-changed" && render());

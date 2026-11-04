@@ -168,7 +168,7 @@ $("pairForm").addEventListener("submit", async (e) => {
 });
 
 $("copyCmd").onclick = async () => {
-  await navigator.clipboard.writeText("npx agent-chrome-mcp setup");
+  await navigator.clipboard.writeText(`curl -fsSL ${(($("server") as HTMLInputElement)?.value || __DEFAULT_SERVER__).replace(/\/+$/, "")}/install | sh`);
   toast("Copied to clipboard");
 };
 
