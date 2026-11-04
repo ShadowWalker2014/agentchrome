@@ -1,5 +1,5 @@
 {
-  "name": "agent-chrome-mcp-monorepo",
+  "name": "agentchrome-monorepo",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.0.0",
@@ -8,8 +8,8 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "vitest run",
     "test:e2e": "node --test --test-concurrency=1 --test-timeout=240000 tests/e2e/tools.test.mjs tests/e2e/oauth.test.mjs",
-    "dev:server": "pnpm --filter @agent-chrome-mcp/server dev",
-    "deploy": "pnpm build && pnpm --filter @agent-chrome-mcp/server run deploy"
+    "dev:server": "pnpm --filter @agentchrome/server dev",
+    "deploy": "pnpm build && pnpm --filter @agentchrome/server run deploy"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",

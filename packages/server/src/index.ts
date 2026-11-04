@@ -8,7 +8,7 @@ import {
   WS_TOKEN_PREFIX,
   type CallToolResult,
   type SessionInfo,
-} from "@agent-chrome-mcp/protocol";
+} from "@agentchrome/protocol";
 import {
   authenticate,
   createAccount,
@@ -78,7 +78,7 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
     });
     const text =
       lines.length === 0
-        ? "No Chrome profiles are paired yet. Install the extension, then run `agent-chrome-mcp pair` and enter the code in the extension popup."
+        ? "No Chrome profiles are paired yet. Install the extension, then run `agentchrome pair` and enter the code in the extension popup."
         : JSON.stringify(lines, null, 2);
     return { content: [{ type: "text", text }], structuredContent: { browsers: lines } };
   }
@@ -87,7 +87,7 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
     const text = [
       `Pairing code: ${code} (single use, valid until ${new Date(expiresAt).toISOString()}).`,
       "Steps for the user:",
-      `1. Download the extension: ${origin}/agent-chrome-mcp-extension.zip and unzip it.`,
+      `1. Download the extension: ${origin}/agentchrome-extension.zip and unzip it.`,
       "2. Open chrome://extensions, turn on Developer mode, click Load unpacked and choose the unzipped folder.",
       `3. Click the Agent Chrome icon in the toolbar, paste ${code} and press Connect.`,
       "Then call list_browsers to confirm the profile is online.",
@@ -116,7 +116,7 @@ const mcpApi: ExportedHandler<Env> = {
     const res = await handleMcpRequest(request, {
       principal: props.accountId,
       secret: await sessionSecret(env),
-      serverName: "agent-chrome-mcp",
+      serverName: "agentchrome",
       serverVersion: VERSION,
       instructions: SERVER_INSTRUCTIONS,
       async callTool(name, args, session) {
@@ -306,14 +306,14 @@ const app: ExportedHandler<Env> = {
     if (path === "/.well-known/oauth-protected-resource") {
       // Some clients look for resource metadata at the root instead of under /mcp.
       return json(
-        { resource: `${origin}/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Agent Chrome MCP", scopes_supported: ["browser"] },
+        { resource: `${origin}/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Agent Chrome", scopes_supported: ["browser"] },
         200,
         { "access-control-allow-origin": "*" },
       );
     }
 
     if (path === "/api/info") {
-      return json({ name: "agent-chrome-mcp", version: VERSION, mcpUrl: `${origin}/mcp`, signup: env.SIGNUP_MODE === "closed" ? "closed" : "open" });
+      return json({ name: "agentchrome", version: VERSION, mcpUrl: `${origin}/mcp`, signup: env.SIGNUP_MODE === "closed" ? "closed" : "open" });
     }
 
     if (path === "/api/signup" && request.method === "POST") {
@@ -329,7 +329,7 @@ const app: ExportedHandler<Env> = {
       if (await limited(env.PAIR_LIMITER, `pair:${ip}`)) return err(429, "Too many attempts. Wait a minute.");
       const body = (await request.json().catch(() => ({}))) as any;
       const r = await redeemPairCode(env, String(body.code ?? ""), String(body.name ?? "Chrome"), body.email, body.version);
-      if (!r) return err(400, "That pairing code is wrong, used or expired. Run `agent-chrome-mcp pair` for a new one.");
+      if (!r) return err(400, "That pairing code is wrong, used or expired. Run `agentchrome pair` for a new one.");
       return json({ ...r, wsUrl: `${origin.replace(/^http/, "ws")}/ws`, server: origin });
     }
 
@@ -403,7 +403,7 @@ function providerFor(origin: string) {
       scopesSupported: ["browser"],
       accessTokenTTL: 3600,
       refreshTokenTTL: 90 * 24 * 3600,
-      resourceMetadata: { resource: `${origin}/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Agent Chrome MCP" },
+      resourceMetadata: { resource: `${origin}/mcp`, authorization_servers: [origin], bearer_methods_supported: ["header"], resource_name: "Agent Chrome" },
       resolveExternalToken: async ({ token, env }) => {
         const principal = await verifyApiKey(env as Env, token);
         return principal ? { props: principal, audience: `${origin}/mcp` } : null;
@@ -416,6 +416,11 @@ function providerFor(origin: string) {
 
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const u = new URL(request.url);
+    if (u.hostname.startsWith("www.")) {
+      u.hostname = u.hostname.slice(4);
+      return Response.redirect(u.toString(), 301);
+    }
     return providerFor(new URL(request.url).origin).fetch(request, env, ctx);
   },
 } satisfies ExportedHandler<Env>;

@@ -1,5 +1,5 @@
 {
-  "name": "@agent-chrome-mcp/protocol",
+  "name": "@agentchrome/protocol",
   "version": "0.1.0",
   "private": true,
   "type": "module",

@@ -59,8 +59,8 @@ export async function api(path, { key, method = "GET", body } = {}) {
 export async function signup() {
   const info = await api("/api/info");
   if (info.mode === "local") {
-    // Local server: the account key is created by `agent-chrome-mcp setup --local` and kept in the test config dir.
-    const cfg = JSON.parse(readFileSync(join(process.env.XDG_CONFIG_HOME, "agent-chrome-mcp", "config.json"), "utf8"));
+    // Local server: the account key is created by `agentchrome setup --local` and kept in the test config dir.
+    const cfg = JSON.parse(readFileSync(join(process.env.XDG_CONFIG_HOME, "agentchrome", "config.json"), "utf8"));
     return { apiKey: cfg.apiKey, accountId: "local" };
   }
   return api("/api/signup", { method: "POST" });

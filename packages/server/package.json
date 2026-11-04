@@ -1,5 +1,5 @@
 {
-  "name": "@agent-chrome-mcp/server",
+  "name": "@agentchrome/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@agent-chrome-mcp/protocol": "workspace:*",
+    "@agentchrome/protocol": "workspace:*",
     "@cloudflare/workers-oauth-provider": "^1.2.4"
   },
   "devDependencies": {

@@ -27,7 +27,7 @@ manifest.version = version;
 writeFileSync(join(out, "manifest.json"), JSON.stringify(manifest, null, 2));
 
 // Zip for releases and for the server to hand out.
-const zip = join(here, "agent-chrome-mcp-extension.zip");
+const zip = join(here, "agentchrome-extension.zip");
 rmSync(zip, { force: true });
 execFileSync("zip", ["-qr", zip, "."], { cwd: out });
 console.log(`extension ${version} built -> ${out} (default server ${defaultServer})`);

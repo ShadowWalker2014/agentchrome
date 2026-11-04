@@ -1,11 +1,11 @@
 ---
-name: agent-chrome
-description: Drive the user's real Chrome (signed-in profiles) through the agent-chrome MCP server — open tabs in your own tab group, click, type, read pages, run JavaScript, inspect console and network, take screenshots and record video clips. Use when a task needs the user's logged-in browser, a real Chrome session, visual checks of a web app, or a screen recording of a flow.
+name: agentchrome
+description: Drive the user's real Chrome (signed-in profiles) through the agentchrome MCP server — open tabs in your own tab group, click, type, read pages, run JavaScript, inspect console and network, take screenshots and record video clips. Use when a task needs the user's logged-in browser, a real Chrome session, visual checks of a web app, or a screen recording of a flow.
 ---
 
-# Using Agent Chrome MCP
+# Using Agent Chrome
 
-The `agent-chrome` MCP server controls the user's own Chrome through an extension. You act in **your own tab group** (named after your agent) and a glowing border shows the user which tab you are driving. Several Chrome profiles can be paired; each is a separate "browser".
+The `agentchrome` MCP server controls the user's own Chrome through an extension. You act in **your own tab group** (named after your agent) and a glowing border shows the user which tab you are driving. Several Chrome profiles can be paired; each is a separate "browser".
 
 ## Start every browser task like this
 

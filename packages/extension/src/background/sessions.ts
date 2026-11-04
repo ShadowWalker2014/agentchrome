@@ -1,7 +1,7 @@
 // Each MCP session owns one Chrome tab group per browser profile. State lives in storage.session
 // so it survives service-worker restarts but not a browser restart.
 
-import { agentFor, type SessionInfo } from "@agent-chrome-mcp/protocol";
+import { agentFor, type SessionInfo } from "@agentchrome/protocol";
 
 export interface SessionState {
   id: string;
@@ -27,14 +27,45 @@ export function prettyClient(client: string): string {
 
 let cache: Record<string, SessionState> | null = null;
 
+// Sessions live in storage.local so they survive extension updates, reloads and Chrome restarts.
+// Entries are removed when their tab group closes, when idle for a day, or when their group is gone at startup.
 async function load(): Promise<Record<string, SessionState>> {
-  if (!cache) cache = ((await chrome.storage.session.get("sessions")).sessions as Record<string, SessionState>) ?? {};
+  if (!cache) {
+    cache = ((await chrome.storage.local.get("sessions")).sessions as Record<string, SessionState>) ?? {};
+    await reconcile(cache);
+  }
   return cache;
 }
 
 async function save() {
-  if (cache) await chrome.storage.session.set({ sessions: cache });
+  if (cache) await chrome.storage.local.set({ sessions: cache });
 }
+
+/** Drop stale entries and forget groups/tabs that no longer exist. */
+async function reconcile(all: Record<string, SessionState>) {
+  for (const [id, s] of Object.entries(all)) {
+    if (Date.now() - s.lastActive > 86_400_000) {
+      delete all[id];
+      continue;
+    }
+    if (s.groupId !== undefined && !(await groupAlive(s.groupId))) s.groupId = undefined;
+    if (s.currentTabId !== undefined && !(await chrome.tabs.get(s.currentTabId).catch(() => null))) s.currentTabId = undefined;
+  }
+  await chrome.storage.local.set({ sessions: all });
+}
+
+chrome.tabGroups.onRemoved.addListener(async (group) => {
+  const all = await load();
+  let changed = false;
+  for (const s of Object.values(all)) {
+    if (s.groupId === group.id) {
+      s.groupId = undefined;
+      s.currentTabId = undefined;
+      changed = true;
+    }
+  }
+  if (changed) await save();
+});
 
 export async function getSession(info: SessionInfo): Promise<SessionState> {
   const all = await load();
@@ -51,6 +82,14 @@ export async function getSession(info: SessionInfo): Promise<SessionState> {
       lastActive: Date.now(),
     };
     all[info.id] = s;
+    // After an update that lost state, reuse an unclaimed group with this agent's name instead of opening a duplicate.
+    const claimed = new Set(Object.values(all).map((x) => x.groupId).filter((g) => g !== undefined));
+    const orphan = (await chrome.tabGroups.query({ title: s.title })).find((g) => !claimed.has(g.id));
+    if (orphan) {
+      s.groupId = orphan.id;
+      s.windowId = orphan.windowId;
+      s.currentTabId = (await chrome.tabs.query({ groupId: orphan.id }))[0]?.id;
+    }
     // Forget sessions idle for more than a day.
     for (const [k, v] of Object.entries(all)) if (Date.now() - v.lastActive > 86_400_000) delete all[k];
   }

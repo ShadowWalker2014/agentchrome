@@ -1,9 +1,9 @@
 #!/bin/sh
-# Deploy your own agent-chrome-mcp server to Cloudflare (Workers + Durable Objects + D1 + KV + R2).
+# Deploy your own agentchrome server to Cloudflare (Workers + Durable Objects + D1 + KV + R2).
 # Needs: Node 18+, pnpm, and `npx wrangler login` (or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID).
 # Usage: sh scripts/deploy-cloudflare.sh [worker-name]
 set -e
-NAME="${1:-agent-chrome-mcp}"
+NAME="${1:-agentchrome}"
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SERVER_DIR="$ROOT/packages/server"
 cd "$ROOT"
@@ -16,9 +16,9 @@ LOCAL=wrangler.self.jsonc
 cp "$CFG" "$LOCAL"
 node -e '
 const fs=require("fs");const f=process.argv[1];let s=fs.readFileSync(f,"utf8");
-s=s.replace(/"account_id": "[^"]*",\n\s*/,"").replace(/"name": "agent-chrome-mcp"/,`"name": "${process.argv[2]}"`)
- .replace(/"database_id": "[^"]*", /,"").replace(/, "id": "[^"]*" \}/," }").replace(/"bucket_name": "agent-chrome-mcp-artifacts"/,`"bucket_name": "${process.argv[2]}-artifacts"`)
- .replace(/"database_name": "agent-chrome-mcp"/,`"database_name": "${process.argv[2]}"`);
+s=s.replace(/"account_id": "[^"]*",\n\s*/,"").replace(/"name": "agentchrome"/,`"name": "${process.argv[2]}"`)
+ .replace(/"database_id": "[^"]*", /,"").replace(/, "id": "[^"]*" \}/," }").replace(/"bucket_name": "agentchrome-artifacts"/,`"bucket_name": "${process.argv[2]}-artifacts"`)
+ .replace(/"database_name": "agentchrome"/,`"database_name": "${process.argv[2]}"`);
 fs.writeFileSync(f,s)' "$LOCAL" "$NAME"
 
 echo "→ Creating D1 database, KV namespace and R2 bucket (existing ones are reused)"

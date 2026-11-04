@@ -182,3 +182,4 @@ test("the status pill never blocks a click on a button underneath it", async () 
   const pass = await page.evaluate(() => document.getElementById("__acm_overlay_host")?.hasAttribute("data-pass"));
   assert.equal(pass, false);
 });
+

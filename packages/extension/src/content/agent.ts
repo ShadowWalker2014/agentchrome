@@ -1,4 +1,4 @@
-import { AGENT_ICONS } from "@agent-chrome-mcp/protocol";
+import { AGENT_ICONS } from "@agentchrome/protocol";
 // Injected on demand into the isolated world of a tab. Globals persist for the lifetime of the page,
 // so element refs stay stable between calls until the page navigates.
 

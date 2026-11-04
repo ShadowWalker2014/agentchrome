@@ -1,19 +1,19 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
-import { AGENTS, copyToClipboard, installSkill, openUrl, SERVER_NAME, uninstallSkill } from "./agents";
+import { AGENTS, copyToClipboard, installSkill, openUrl, removeLegacy, SERVER_NAME, uninstallSkill } from "./agents";
 import { ensureLocalAccount, HOME_DIR, LOCAL_PORT, localPairCode, startLocalServer } from "./local-server";
 // @ts-ignore bundled as text by esbuild
-import SKILL_MD from "../../../skills/agent-chrome/SKILL.md";
+import SKILL_MD from "../../../skills/agentchrome/SKILL.md";
 
 declare const __VERSION__: string;
 declare const __DEFAULT_SERVER__: string;
 
 const VERSION = typeof __VERSION__ === "string" ? __VERSION__ : "dev";
 const DEFAULT_SERVER = process.env.AGENT_CHROME_MCP_SERVER ?? (typeof __DEFAULT_SERVER__ === "string" ? __DEFAULT_SERVER__ : "http://127.0.0.1:8787");
-const CONFIG_DIR = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "agent-chrome-mcp");
+const CONFIG_DIR = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "agentchrome");
 const CONFIG = join(CONFIG_DIR, "config.json");
 const LOCAL_SERVER = `http://127.0.0.1:${LOCAL_PORT}`;
 
@@ -72,7 +72,7 @@ function writeConfig(cfg: Config) {
 
 function requireConfig(): Config {
   const cfg = readConfig();
-  if (!cfg) fail(`Not set up yet. Run ${bold("agent-chrome-mcp setup")} first.`);
+  if (!cfg) fail(`Not set up yet. Run ${bold("agentchrome setup")} first.`);
   return cfg!;
 }
 
@@ -102,7 +102,7 @@ async function ensureExtension(server: string): Promise<string> {
   if (bundled) {
     cpSync(bundled, dest, { recursive: true });
   } else {
-    const res = await fetch(`${server}/agent-chrome-mcp-extension.zip`);
+    const res = await fetch(`${server}/agentchrome-extension.zip`);
     if (!res.ok) throw new Error(`Could not download the extension from ${server} (HTTP ${res.status})`);
     const zip = join(HOME_DIR, "extension.zip");
     writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
@@ -133,19 +133,19 @@ ${bold("Load the Chrome extension")} ${dim("(once per Chrome profile)")}
   1. Open ${cyan("chrome://extensions")} and turn on ${bold("Developer mode")} (top right).
   2. Click ${bold("Load unpacked")} and choose:
      ${violet(dir)}
-  3. Pin ${bold("Agent Chrome MCP")} from the puzzle-piece menu, click it, and paste a pairing code.
+  3. Pin ${bold("Agent Chrome")} from the puzzle-piece menu, click it, and paste a pairing code.
 `);
 }
 
 // ---------- commands ----------
 async function cmdSetup(flags: Record<string, string | boolean>) {
-  console.log(`\n${violet("◆")} ${bold("agent-chrome-mcp")} ${dim(`v${VERSION}`)}\n`);
+  console.log(`\n${violet("◆")} ${bold("agentchrome")} ${dim(`v${VERSION}`)}\n`);
   const local = Boolean(flags.local);
   let cfg = readConfig();
   if (local) {
     const { apiKey } = ensureLocalAccount(Boolean(flags["rotate-key"]));
     if (apiKey) cfg = { server: LOCAL_SERVER, apiKey, accountId: "local", mode: "local" };
-    else if (!cfg || cfg.mode !== "local") fail("A local account exists but its key is not in your config. Run `agent-chrome-mcp setup --local --rotate-key`.");
+    else if (!cfg || cfg.mode !== "local") fail("A local account exists but its key is not in your config. Run `agentchrome setup --local --rotate-key`.");
     writeConfig(cfg!);
     ok(`Local server account ready ${dim(`(${HOME_DIR})`)}`);
   } else {
@@ -181,12 +181,12 @@ async function cmdSetup(flags: Record<string, string | boolean>) {
     if (!flags["no-open"] && process.stdout.isTTY) openExtensionPage(dir);
   }
   await cmdPair(flags);
-  if (local) console.log(`\n${bold("Start the local server:")} ${cyan("agent-chrome-mcp serve")} ${dim("(or `serve --install` to run it at login)")}`);
-  console.log(`\n${bold("Try it:")} ask your agent ${cyan('"Use agent-chrome to open news.ycombinator.com and screenshot it"')}\n`);
+  if (local) console.log(`\n${bold("Start the local server:")} ${cyan("agentchrome serve")} ${dim("(or `serve --install` to run it at login)")}`);
+  console.log(`\n${bold("Try it:")} ask your agent ${cyan('"Use agentchrome to open news.ycombinator.com and screenshot it"')}\n`);
 }
 
 async function cmdLogin(flags: Record<string, string | boolean>) {
-  if (typeof flags.key !== "string") fail("Usage: agent-chrome-mcp login --key acm_sk_… [--server URL]");
+  if (typeof flags.key !== "string") fail("Usage: agentchrome login --key acm_sk_… [--server URL]");
   await cmdSetup({ ...flags, "no-install": flags.install ? false : true });
 }
 
@@ -207,7 +207,7 @@ async function cmdPair(flags: Record<string, string | boolean>) {
   const mins = Math.round((Date.parse(expiresAt) - Date.now()) / 60000);
   console.log(`
 ${bold("Pairing code")}  ${violet(bold(code))}  ${dim(`(${copied ? "copied, " : ""}valid ${mins} min, single use)`)}
-Paste it in the Agent Chrome MCP popup in the Chrome profile you want to connect.
+Paste it in the Agent Chrome popup in the Chrome profile you want to connect.
 ${cfg.mode === "local" ? `Set ${bold("Server")} in the popup to ${cyan(LOCAL_SERVER)}.` : cfg.server !== DEFAULT_SERVER ? `Set ${bold("Server")} in the popup to ${cyan(cfg.server)}.` : ""}`);
 }
 
@@ -219,6 +219,8 @@ async function cmdInstall(pos: string[], flags: Record<string, string | boolean>
     fail(`Unknown agent. Choose from: ${AGENTS.map((a) => a.id).join(", ")}`);
   }
   const t = { url: mcpUrl(cfg.server), token: flags.oauth ? undefined : cfg.apiKey };
+  const legacy = removeLegacy();
+  if (legacy.length) ok(`Removed the old "agent-chrome" entries ${dim(`(${legacy.length})`)}`);
   console.log(`\n${bold("Adding the MCP server")} ${dim(`"${SERVER_NAME}" → ${t.url}${flags.oauth ? " (OAuth)" : ""}`)}`);
   for (const a of targets) {
     try {
@@ -227,10 +229,10 @@ async function cmdInstall(pos: string[], flags: Record<string, string | boolean>
       warn(`${a.name.padEnd(12)} ${(e as Error).message}`);
     }
   }
-  if (!targets.length) warn("No supported agents found. Pass agent ids, e.g. `agent-chrome-mcp install claude codex`.");
+  if (!targets.length) warn("No supported agents found. Pass agent ids, e.g. `agentchrome install claude codex`.");
   if (!flags["no-skill"]) {
     const links = installSkill(SKILL_MD);
-    console.log(`\n${bold("Skill")} ${dim("agent-chrome (one copy, symlinked)")}`);
+    console.log(`\n${bold("Skill")} ${dim("agentchrome (one copy, symlinked)")}`);
     for (const l of links) console.log(`  ${dim("↳")} ${dim(l)}`);
   }
 }
@@ -246,21 +248,21 @@ async function cmdUninstall(pos: string[]) {
   }
   if (!pos.length) {
     uninstallSkill();
-    ok("Removed the agent-chrome skill links");
+    ok("Removed the agentchrome skill links");
   }
 }
 
 async function cmdStatus() {
   const cfg = readConfig();
-  console.log(`\n${violet("◆")} ${bold("agent-chrome-mcp")} ${dim(`v${VERSION}`)}`);
-  if (!cfg) return console.log(`  ${red("Not set up.")} Run ${bold("agent-chrome-mcp setup")}`);
+  console.log(`\n${violet("◆")} ${bold("agentchrome")} ${dim(`v${VERSION}`)}`);
+  if (!cfg) return console.log(`  ${red("Not set up.")} Run ${bold("agentchrome setup")}`);
   console.log(`  Server   ${cfg.server} ${dim(cfg.mode === "local" ? "(local)" : "(cloud)")}`);
   console.log(`  MCP URL  ${mcpUrl(cfg.server)}`);
   try {
     const me = await api(cfg, "/api/me");
     console.log(`  Account  ${me.accountId}`);
     console.log(`\n${bold("Browsers")}`);
-    if (!me.devices.length) console.log(`  ${dim("none paired — run")} agent-chrome-mcp pair`);
+    if (!me.devices.length) console.log(`  ${dim("none paired — run")} agentchrome pair`);
     for (const d of me.devices) console.log(`  ${d.online ? green("●") : dim("○")} ${d.name}${d.email ? dim(` <${d.email}>`) : ""} ${dim(d.id)}`);
   } catch (e) {
     console.log(`  ${red("Server unreachable or key rejected:")} ${(e as Error).message}`);
@@ -268,14 +270,14 @@ async function cmdStatus() {
   console.log(`\n${bold("Agents")}`);
   for (const a of AGENTS) {
     if (!a.detect()) continue;
-    console.log(`  ${a.installed() ? green("✓") : dim("·")} ${a.name}${a.installed() ? "" : dim("  (not installed — agent-chrome-mcp install " + a.id + ")")}`);
+    console.log(`  ${a.installed() ? green("✓") : dim("·")} ${a.name}${a.installed() ? "" : dim("  (not installed — agentchrome install " + a.id + ")")}`);
   }
   console.log("");
 }
 
 async function cmdRevoke(pos: string[]) {
   const cfg = requireConfig();
-  if (!pos[0]) fail("Usage: agent-chrome-mcp revoke <browser-id>   (ids from `agent-chrome-mcp status`)");
+  if (!pos[0]) fail("Usage: agentchrome revoke <browser-id>   (ids from `agentchrome status`)");
   const r = await api(cfg, `/api/devices/${encodeURIComponent(pos[0]!)}`, { method: "DELETE" });
   r.revoked ? ok(`Revoked ${pos[0]}`) : warn(`No active browser ${pos[0]}`);
 }
@@ -298,12 +300,12 @@ async function cmdServe(flags: Record<string, string | boolean>) {
   const port = Number(flags.port ?? LOCAL_PORT);
   if (flags.install) return installService(port);
   const s = await startLocalServer(port, (m) => console.log(`${dim(new Date().toISOString())} ${m}`)).catch((e) => fail(`Cannot listen on 127.0.0.1:${port}: ${e.message}`));
-  console.log(`${violet("◆")} ${bold("agent-chrome-mcp local server")} on ${cyan(s.url)}  ${dim("MCP:")} ${s.url}/mcp`);
+  console.log(`${violet("◆")} ${bold("agentchrome local server")} on ${cyan(s.url)}  ${dim("MCP:")} ${s.url}/mcp`);
 }
 
 function installService(port: number) {
-  if (process.platform !== "darwin") fail("--install supports macOS launchd. On Linux, run `agent-chrome-mcp serve` from a systemd user unit.");
-  const label = "dev.agent-chrome-mcp.local";
+  if (process.platform !== "darwin") fail("--install supports macOS launchd. On Linux, run `agentchrome serve` from a systemd user unit.");
+  const label = "dev.agentchrome.local";
   const plist = join(homedir(), "Library", "LaunchAgents", `${label}.plist`);
   const script = fileURLToPath(import.meta.url);
   writeFileSync(
@@ -334,32 +336,49 @@ async function cmdExtension(flags: Record<string, string | boolean>) {
   copyToClipboard(dir);
   printExtensionSteps(dir);
   if (!flags["no-open"]) openExtensionPage(dir);
-  if (flags.open) openUrl("https://github.com/ShadowWalker2014/agent-chrome-mcp#install-the-chrome-extension");
+  if (flags.open) openUrl("https://github.com/ShadowWalker2014/agentchrome#install-the-chrome-extension");
 }
 
 function help() {
-  console.log(`${violet("◆")} ${bold("agent-chrome-mcp")} ${dim(`v${VERSION}`)} — your real Chrome, for every coding agent
+  console.log(`${violet("◆")} ${bold("agentchrome")} ${dim(`v${VERSION}`)} — your real Chrome, for every coding agent
 
 ${bold("Usage")}
-  agent-chrome-mcp setup [--server URL] [--key KEY] [--local] [--agents claude,codex]
+  agentchrome setup [--server URL] [--key KEY] [--local] [--agents claude,codex]
                                   Create/sign in to an account, add the MCP server to every
                                   agent found, link the skill, unpack the extension, print a pairing code
-  agent-chrome-mcp pair           New pairing code for another Chrome profile
-  agent-chrome-mcp install [ids]  Add the MCP server to agents (default: all detected)  [--oauth]
-  agent-chrome-mcp uninstall [ids]
-  agent-chrome-mcp status         Account, paired browsers (online/offline), agents
-  agent-chrome-mcp extension      Unpack the extension and show how to load it  [--path]
-  agent-chrome-mcp revoke <id>    Remove a paired browser
-  agent-chrome-mcp rotate-key     Replace your account key and update every agent
-  agent-chrome-mcp key            Print your account key (for OAuth sign-in pages)
-  agent-chrome-mcp login --key K  Use an existing account key on this machine
-  agent-chrome-mcp serve          Run the local server on 127.0.0.1:${LOCAL_PORT}  [--install]
+  agentchrome pair           New pairing code for another Chrome profile
+  agentchrome install [ids]  Add the MCP server to agents (default: all detected)  [--oauth]
+  agentchrome uninstall [ids]
+  agentchrome status         Account, paired browsers (online/offline), agents
+  agentchrome extension      Unpack the extension and show how to load it  [--path]
+  agentchrome revoke <id>    Remove a paired browser
+  agentchrome rotate-key     Replace your account key and update every agent
+  agentchrome key            Print your account key (for OAuth sign-in pages)
+  agentchrome login --key K  Use an existing account key on this machine
+  agentchrome serve          Run the local server on 127.0.0.1:${LOCAL_PORT}  [--install]
 
 ${bold("Agents")}  ${AGENTS.map((a) => a.id).join(", ")}
-${bold("Docs")}    https://github.com/ShadowWalker2014/agent-chrome-mcp`);
+${bold("Docs")}    https://github.com/ShadowWalker2014/agentchrome`);
+}
+
+/** Move files from the old agent-chrome-mcp name, once. */
+function migrateLegacyPaths() {
+  const oldConfig = join(process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config"), "agent-chrome-mcp");
+  if (existsSync(oldConfig) && !existsSync(CONFIG_DIR)) {
+    try {
+      renameSync(oldConfig, CONFIG_DIR);
+    } catch {}
+  }
+  const oldHome = join(homedir(), ".agent-chrome-mcp");
+  if (existsSync(oldHome) && !existsSync(HOME_DIR)) {
+    try {
+      renameSync(oldHome, HOME_DIR);
+    } catch {}
+  }
 }
 
 async function main() {
+  migrateLegacyPaths();
   const [cmd, ...rest] = process.argv.slice(2);
   const { pos, flags } = parseArgs(rest);
   switch (cmd) {

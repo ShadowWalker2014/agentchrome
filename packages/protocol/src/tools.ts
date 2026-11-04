@@ -108,16 +108,17 @@ export const TOOLS: ToolDef[] = [
     name: "tab_groups",
     title: "Manage tab groups",
     description:
-      "List, create, rename, recolor, collapse or ungroup Chrome tab groups. action=list returns every group. action=update changes title/color/collapsed of a group (defaults to this session's group). action=create groups the given tabIds (or the current tab) into a new group. action=ungroup removes tabs from their group. action=move moves tabIds into a group.",
+      "List, create, rename, recolor, collapse or ungroup Chrome tab groups. action=list returns every group. action=update changes title/color/collapsed of a group (defaults to this session's group). action=create groups the given tabIds (or the current tab) into a new group. action=ungroup removes tabs from their group. action=move moves tabIds into a group. action=close closes every tab in a group (default: this session's group).",
     inputSchema: obj(
       {
-        action: { type: "string", enum: ["list", "create", "update", "ungroup", "move"] },
+        action: { type: "string", enum: ["list", "create", "update", "ungroup", "move", "close"] },
         groupId: { type: "number", description: "Target group. Default: this session's group." },
         tabIds: { type: "array", items: { type: "number" } },
         title: { type: "string", description: "New group name." },
         color: { type: "string", enum: ["grey", "blue", "red", "yellow", "green", "pink", "purple", "cyan", "orange"] },
         collapsed: { type: "boolean" },
         makeSessionGroup: { type: "boolean", description: "With create/move: make this the session's group from now on." },
+        force: { type: "boolean", description: "With close: allow closing a group that is not this session's." },
       },
       ["action"],
     ),
@@ -393,7 +394,7 @@ for (const t of TOOLS) {
   t.annotations = {
     title: t.title,
     readOnlyHint: READ_ONLY.has(t.name),
-    destructiveHint: t.name === "tabs_close",
+    destructiveHint: t.name === "tabs_close" || t.name === "tab_groups",
     idempotentHint: READ_ONLY.has(t.name),
     openWorldHint: !t.server,
   };

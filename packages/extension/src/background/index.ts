@@ -1,6 +1,6 @@
 // Service worker entry: keeps one authenticated WebSocket to the relay server and runs tool calls.
 
-import { WS_SUBPROTOCOL, WS_TOKEN_PREFIX, type ServerToExtension } from "@agent-chrome-mcp/protocol";
+import { WS_SUBPROTOCOL, WS_TOKEN_PREFIX, type ServerToExtension } from "@agentchrome/protocol";
 import { getConnection, getSettings, resolvePrompt, setConnection, setSettings } from "./settings";
 import { allSessions, updateSession } from "./sessions";
 import { runTool, setPaused, setSessionPaused } from "./tools";

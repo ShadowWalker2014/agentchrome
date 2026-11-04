@@ -5,7 +5,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, s
 import { homedir } from "node:os";
 import { dirname, join, relative } from "node:path";
 
-export const SERVER_NAME = "agent-chrome";
+export const SERVER_NAME = "agentchrome";
 const H = homedir();
 
 export interface InstallTarget {
@@ -45,7 +45,7 @@ function readJson(path: string): any {
 
 function writeJson(path: string, data: unknown) {
   mkdirSync(dirname(path), { recursive: true });
-  if (existsSync(path)) cpSync(path, `${path}.bak-agent-chrome`);
+  if (existsSync(path)) cpSync(path, `${path}.bak-agentchrome`);
   writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);
 }
 
@@ -103,7 +103,7 @@ const codex: AgentDef = {
   detect: () => has("codex") || existsSync(dirname(CODEX_CONFIG)),
   install(t) {
     const cur = existsSync(CODEX_CONFIG) ? readFileSync(CODEX_CONFIG, "utf8") : "";
-    if (cur) cpSync(CODEX_CONFIG, `${CODEX_CONFIG}.bak-agent-chrome`);
+    if (cur) cpSync(CODEX_CONFIG, `${CODEX_CONFIG}.bak-agentchrome`);
     let block = `\n[mcp_servers.${SERVER_NAME}]\nurl = "${t.url}"\ntool_timeout_sec = 180\n`;
     if (t.token) block += `\n[mcp_servers.${SERVER_NAME}.http_headers]\nAuthorization = "Bearer ${t.token}"\n`;
     mkdirSync(dirname(CODEX_CONFIG), { recursive: true });
@@ -243,7 +243,7 @@ export const AGENTS: AgentDef[] = [
 
 // ---------- skill: one canonical copy, symlinked into every agent ----------
 
-export const SKILL_NAME = "agent-chrome";
+export const SKILL_NAME = "agentchrome";
 const CANONICAL_SKILLS = join(H, ".agents", "skills");
 const SKILL_DIRS: { agent: string; dir: string }[] = [
   { agent: "Claude Code", dir: join(H, ".claude", "skills") },
@@ -253,6 +253,61 @@ const SKILL_DIRS: { agent: string; dir: string }[] = [
   { agent: "Cursor", dir: join(H, ".cursor", "skills") },
   { agent: "opencode", dir: join(H, ".config", "opencode", "skills") },
 ];
+
+/** Earlier releases used these names; remove them so agents don't list the server twice. */
+export const LEGACY_SERVER_NAMES = ["agent-chrome"];
+
+export function removeLegacy(): string[] {
+  const removed: string[] = [];
+  for (const old of LEGACY_SERVER_NAMES) {
+    for (const [bin, args] of [
+      ["claude", ["mcp", "remove", old, "--scope", "user"]],
+      ["grok", ["mcp", "remove", old]],
+      ["agy", ["mcp", "remove", old]],
+    ] as [string, string[]][]) {
+      if (has(bin) && runQuiet(bin, args).status === 0) removed.push(`${bin}: ${old}`);
+    }
+    if (existsSync(CODEX_CONFIG)) {
+      const cur = readFileSync(CODEX_CONFIG, "utf8");
+      const header = new RegExp(`^\\s*\\[mcp_servers\\.(?:"${old}"|${old})(\\.|\\])`);
+      if (cur.split("\n").some((l) => header.test(l))) {
+        const out: string[] = [];
+        let skip = false;
+        for (const line of cur.split("\n")) {
+          if (/^\s*\[/.test(line)) skip = header.test(line);
+          if (!skip) out.push(line);
+        }
+        writeFileSync(CODEX_CONFIG, out.join("\n"));
+        removed.push(`codex: ${old}`);
+      }
+    }
+    const jsonFiles: [string, string][] = [
+      [join(H, ".gemini", "settings.json"), "mcpServers"],
+      [AGY_IDE, "mcpServers"],
+      [MUSE, "mcpServers"],
+      [join(H, ".cursor", "mcp.json"), "mcpServers"],
+      [join(H, ".config", "opencode", "opencode.json"), "mcp"],
+      [join(H, ".codeium", "windsurf", "mcp_config.json"), "mcpServers"],
+    ];
+    for (const [file, key] of jsonFiles) {
+      if (!existsSync(file)) continue;
+      const d = readJson(file);
+      if (d[key]?.[old]) {
+        delete d[key][old];
+        writeJson(file, d);
+        removed.push(`${file}: ${old}`);
+      }
+    }
+    for (const { dir } of SKILL_DIRS) {
+      const link = join(dir, old);
+      try {
+        if (lstatSync(link).isSymbolicLink()) rmSync(link);
+      } catch {}
+    }
+    rmSync(join(CANONICAL_SKILLS, old), { recursive: true, force: true });
+  }
+  return removed;
+}
 
 export function installSkill(skillMd: string): string[] {
   const canonical = join(CANONICAL_SKILLS, SKILL_NAME);

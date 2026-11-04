@@ -5,7 +5,7 @@ export const esc = (s: string) =>
 
 export function page(title: string, body: string): Response {
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(title)} · Agent Chrome MCP</title>
+<title>${esc(title)} · Agent Chrome</title>
 <style>
 :root{color-scheme:light dark;--bg:#FAFAFA;--card:#FFFFFF;--fg:#09090B;--muted:#71717A;--line:rgba(9,9,11,.08);--primary:#2F6BFF;--on-primary:#FFFFFF;--hover:rgba(9,9,11,.04)}
 @media (prefers-color-scheme:dark){:root{--bg:#0A0A0B;--card:#131315;--fg:#FAFAFA;--muted:#A1A1AA;--line:rgba(255,255,255,.08);--primary:#3D77FF;--on-primary:#FFFFFF;--hover:rgba(255,255,255,.05)}}
@@ -37,7 +37,7 @@ button.ghost{width:100%;flex:none}
 .keybox code{flex:1;background:none;box-shadow:none;padding:0;word-break:break-all;font-size:12.5px}
 .keybox .copy{flex:none;height:30px;padding:0 12px}
 code{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--hover);box-shadow:inset 0 0 0 1px var(--line);padding:1px 6px;border-radius:5px}
-</style></head><body><main class="card"><div class="brand">${LOGO_SVG}<span>Agent Chrome MCP</span></div>${body}</main></body></html>`;
+</style></head><body><main class="card"><div class="brand">${LOGO_SVG}<span>Agent Chrome</span></div>${body}</main></body></html>`;
   return new Response(html, {
     headers: {
       "content-type": "text/html; charset=utf-8",

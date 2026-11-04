@@ -1,4 +1,4 @@
-import { b64url, randomId } from "@agent-chrome-mcp/protocol";
+import { b64url, randomId } from "@agentchrome/protocol";
 import type { Env } from "./env";
 
 const enc = new TextEncoder();

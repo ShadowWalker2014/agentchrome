@@ -22,7 +22,7 @@ for (const f of ["index.html", "install.sh"]) writeFileSync(join(pub, f), fill(r
 cpSync(join(root, "docs/media"), join(pub, "media"), { recursive: true });
 cpSync(join(pub, "install.sh"), join(pub, "install"));
 cpSync(join(root, "packages/cli/dist/cli.mjs"), join(pub, "cli.mjs"));
-cpSync(join(root, "packages/extension/agent-chrome-mcp-extension.zip"), join(pub, "agent-chrome-mcp-extension.zip"));
+cpSync(join(root, "packages/extension/agentchrome-extension.zip"), join(pub, "agentchrome-extension.zip"));
 cpSync(join(root, "brand/logo.svg"), join(pub, "logo.svg"));
 cpSync(join(root, "brand/social-card.png"), join(pub, "social-card.png"));
 writeFileSync(join(pub, "_headers"), "/install\n  Content-Type: text/plain; charset=utf-8\n/install.sh\n  Content-Type: text/plain; charset=utf-8\n/cli.mjs\n  Content-Type: text/javascript; charset=utf-8\n");

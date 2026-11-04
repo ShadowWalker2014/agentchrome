@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { randomId, WS_SUBPROTOCOL, type CallToolResult, type SessionInfo } from "@agent-chrome-mcp/protocol";
+import { randomId, WS_SUBPROTOCOL, type CallToolResult, type SessionInfo } from "@agentchrome/protocol";
 import type { Env } from "./env";
 
 interface SocketAttachment {
@@ -130,7 +130,7 @@ export class AccountHub extends DurableObject<Env> {
     const live = this.sockets().sort((a, b) => b.att.connectedAt - a.att.connectedAt);
     if (live.length === 0) {
       throw new Error(
-        "No browser is connected. Open Chrome with the Agent Chrome MCP extension installed and paired (click the toolbar icon to check it says Connected).",
+        "No browser is connected. Open Chrome with the Agent Chrome extension installed and paired (click the toolbar icon to check it says Connected).",
       );
     }
     const match = (s: string) => {

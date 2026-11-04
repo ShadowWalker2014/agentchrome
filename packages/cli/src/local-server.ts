@@ -1,5 +1,5 @@
 // Local "studio" server: the same MCP + extension relay as the Cloudflare Worker, on 127.0.0.1.
-// Nothing leaves the machine; recordings and screenshots are written to ~/.agent-chrome-mcp/artifacts.
+// Nothing leaves the machine; recordings and screenshots are written to ~/.agentchrome/artifacts.
 
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream, existsSync, mkdirSync, readFileSync, statSync, writeFileSync, createWriteStream } from "node:fs";
@@ -16,10 +16,10 @@ import {
   WS_TOKEN_PREFIX,
   type CallToolResult,
   type SessionInfo,
-} from "@agent-chrome-mcp/protocol";
+} from "@agentchrome/protocol";
 
 export const LOCAL_PORT = 47823;
-export const HOME_DIR = process.env.ACM_HOME ?? join(homedir(), ".agent-chrome-mcp");
+export const HOME_DIR = process.env.ACM_HOME ?? join(homedir(), ".agentchrome");
 const STATE = join(HOME_DIR, "local.json");
 const ARTIFACTS = join(HOME_DIR, "artifacts");
 
@@ -57,7 +57,7 @@ export function ensureLocalAccount(rotate = false): { apiKey?: string } {
 
 export function localPairCode(): { code: string; expiresAt: number } {
   const s = loadState();
-  if (!s) throw new Error("Run `agent-chrome-mcp setup --local` first.");
+  if (!s) throw new Error("Run `agentchrome setup --local` first.");
   const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const raw = [...randomBytes(10)].map((b) => A[b % 32]).join("");
   const code = `${raw.slice(0, 5)}-${raw.slice(5)}`;
@@ -87,7 +87,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
 
   const state = () => {
     const s = loadState();
-    if (!s) throw new Error("No local account. Run `agent-chrome-mcp setup --local`.");
+    if (!s) throw new Error("No local account. Run `agentchrome setup --local`.");
     return s;
   };
 
@@ -99,7 +99,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
 
   function pick(selector: string | undefined, sessionId: string): Conn {
     const live = [...conns.values()].sort((a, b) => b.connectedAt - a.connectedAt);
-    if (!live.length) throw new Error("No browser is connected. Open Chrome with the Agent Chrome MCP extension paired to this local server.");
+    if (!live.length) throw new Error("No browser is connected. Open Chrome with the Agent Chrome extension paired to this local server.");
     if (selector) {
       const q = selector.toLowerCase();
       const m = live.find((c) => c.deviceId === selector) ?? live.find((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q));
@@ -115,7 +115,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
     if (name === "list_browsers") {
       const s = state();
       const list = s.devices.map((d) => ({ id: d.id, name: conns.get(d.id)?.name ?? d.name, email: conns.get(d.id)?.email, online: conns.has(d.id) }));
-      return { content: [{ type: "text", text: list.length ? JSON.stringify(list, null, 2) : "No browsers paired. Run `agent-chrome-mcp pair --local`." }] };
+      return { content: [{ type: "text", text: list.length ? JSON.stringify(list, null, 2) : "No browsers paired. Run `agentchrome pair --local`." }] };
     }
     if (name === "pairing_code") {
       const { code, expiresAt } = localPairCode();
@@ -167,10 +167,10 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
       if (req.headers.host && !/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host)) return send(res, 403, { error: "host not allowed" });
 
       if (url.pathname === "/health") return send(res, 200, { ok: true, mode: "local", browsers: conns.size });
-      if (url.pathname === "/api/info") return send(res, 200, { name: "agent-chrome-mcp", mode: "local", mcpUrl: `${origin}/mcp` });
+      if (url.pathname === "/api/info") return send(res, 200, { name: "agentchrome", mode: "local", mcpUrl: `${origin}/mcp` });
 
       if (url.pathname === "/mcp") {
-        if (!authKey(req)) return send(res, 401, { error: "unauthorized" }, { "www-authenticate": 'Bearer realm="agent-chrome-mcp"' });
+        if (!authKey(req)) return send(res, 401, { error: "unauthorized" }, { "www-authenticate": 'Bearer realm="agentchrome"' });
         const body = req.method === "POST" ? await readBody(req) : undefined;
         const request = new Request(`${origin}${req.url}`, {
           method: req.method,
@@ -180,7 +180,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
         const response = await handleMcpRequest(request, {
           principal: "local",
           secret: state().secret,
-          serverName: "agent-chrome-mcp",
+          serverName: "agentchrome",
           serverVersion: "local",
           instructions: SERVER_INSTRUCTIONS,
           callTool,
@@ -200,7 +200,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
         const s = state();
         const code = String(body.code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^(.{5})(.{5})$/, "$1-$2");
         const idx = s.codes.findIndex((c) => c.hash === sha(code) && c.expiresAt > Date.now());
-        if (idx < 0) return send(res, 400, { error: "That pairing code is wrong or expired. Run `agent-chrome-mcp pair --local`." });
+        if (idx < 0) return send(res, 400, { error: "That pairing code is wrong or expired. Run `agentchrome pair --local`." });
         s.codes.splice(idx, 1);
         const deviceToken = `acm_dt_${rand()}`;
         const deviceId = `dev_${rand(9)}`;

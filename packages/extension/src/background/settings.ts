@@ -64,7 +64,7 @@ export async function gate(url: string | undefined, client: string) {
   const host = hostOf(url);
   if (!host) return;
   const s = await getSettings();
-  if (s.blockedHosts.some((p) => matches(host, p))) throw new Error(`${host} is blocked in the Agent Chrome MCP extension settings.`);
+  if (s.blockedHosts.some((p) => matches(host, p))) throw new Error(`${host} is blocked in the Agent Chrome extension settings.`);
   if (!s.askNewSites || s.allowedHosts.some((p) => matches(host, p)) || allowedOnce.has(host)) return;
   const id = crypto.randomUUID();
   const answer = await new Promise<"once" | "always" | "deny">((resolve) => {

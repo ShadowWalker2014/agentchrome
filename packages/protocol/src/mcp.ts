@@ -164,7 +164,7 @@ async function dispatch(msg: JsonRpcRequest, session: SessionInfo, opts: McpHand
       return ok({
         protocolVersion,
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: opts.serverName, title: "Agent Chrome MCP", version: opts.serverVersion },
+        serverInfo: { name: opts.serverName, title: "Agent Chrome", version: opts.serverVersion },
         ...(opts.instructions ? { instructions: opts.instructions } : {}),
       });
     }
@@ -193,7 +193,7 @@ async function dispatch(msg: JsonRpcRequest, session: SessionInfo, opts: McpHand
   }
 }
 
-export const SERVER_INSTRUCTIONS = `Agent Chrome MCP controls the user's real Chrome browser (their signed-in profiles) through an extension.
+export const SERVER_INSTRUCTIONS = `Agent Chrome controls the user's real Chrome browser (their signed-in profiles) through an extension.
 - Start with tabs_context to get your tabs; your work happens in your own tab group, separate from the user's tabs.
 - Take a screenshot (computer action=screenshot) before clicking by coordinates, or use read_page/find refs.
 - Prefer get_page_text or read_page over screenshots for reading content.

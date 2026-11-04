@@ -131,7 +131,7 @@ $("signin").onclick = async () => {
   render();
 };
 
-// Local server: pairing code from `agent-chrome-mcp pair --local`.
+// Local server: pairing code from `agentchrome pair --local`.
 const showLocal = (on: boolean) => {
   $("cloudView").hidden = on;
   $("localView").hidden = !on;

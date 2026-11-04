@@ -24,7 +24,7 @@
     <form id="localView" class="stack" autocomplete="off" hidden>
       <div class="hero">
         <h1>Connect to a local server</h1>
-        <p class="muted">For running everything on this computer. Start the server with <code>agent-chrome-mcp serve</code>, then get a code with <code>agent-chrome-mcp pair --local</code>.</p>
+        <p class="muted">For running everything on this computer. Start the server with <code>agentchrome serve</code>, then get a code with <code>agentchrome pair --local</code>.</p>
       </div>
       <label class="field"><span>Server</span><input id="server" class="mono" spellcheck="false"></label>
       <label class="field"><span>Pairing code</span><input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" autocapitalize="characters"></label>
@@ -49,7 +49,7 @@
     <div id="sessions" class="list">
       <div class="empty">
         <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5.5 3.2v15.6c0 .7.8 1 1.3.5l3.6-3.5 2.7 6c.2.4.7.6 1.1.4l2-.9c.4-.2.6-.7.4-1.1l-2.7-5.9h5.2c.7 0 1-.8.5-1.3L6.8 2.7c-.5-.5-1.3-.2-1.3.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        <div><b>Ready for your agents</b><span class="muted">Ask one to "use agent-chrome to open a page".</span></div>
+        <div><b>Ready for your agents</b><span class="muted">Ask one to "use agentchrome to open a page".</span></div>
       </div>
     </div>
     <button id="stopAll" class="btn danger block" hidden>Stop all agents</button>
@@ -75,7 +75,7 @@
     </div>
   </section>
 
-  <footer><span>v<span id="version"></span></span><span class="dot-sep"></span><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp" target="_blank" rel="noopener">GitHub</a><span class="dot-sep"></span><a id="docsLink" href="https://agent-chrome-mcp.circo.workers.dev" target="_blank" rel="noopener">Docs</a></footer>
+  <footer><span>v<span id="version"></span></span><span class="dot-sep"></span><a href="https://github.com/ShadowWalker2014/agentchrome" target="_blank" rel="noopener">GitHub</a><span class="dot-sep"></span><a id="docsLink" href="https://agentchrome.dev" target="_blank" rel="noopener">Docs</a></footer>
   <div id="toast" class="toast" role="status"></div>
   <script src="popup.js" type="module"></script>
 </body></html>

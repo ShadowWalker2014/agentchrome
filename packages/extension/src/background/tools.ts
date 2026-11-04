@@ -1,4 +1,4 @@
-import type { CallToolResult, ContentBlock, SessionInfo } from "@agent-chrome-mcp/protocol";
+import type { CallToolResult, ContentBlock, SessionInfo } from "@agentchrome/protocol";
 import * as cdp from "./cdp";
 import { modifierBits } from "./keys";
 import * as page from "./page";
@@ -306,6 +306,20 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
       }
       return ok(text(`Tabs ${tabIds.join(", ")} are in group ${groupId}`));
     }
+    if (action === "close") {
+      const gid = a.groupId ?? session.groupId;
+      if (gid === undefined) throw new Error("This session has no tab group to close.");
+      if (gid !== session.groupId && !a.force) throw new Error("That group belongs to someone else. Pass force=true to close it anyway.");
+      const tabs = await chrome.tabs.query({ groupId: gid });
+      if (!tabs.length) throw new Error(`Group ${gid} has no tabs.`);
+      await chrome.tabs.remove(tabs.map((t) => t.id!));
+      if (gid === session.groupId) {
+        session.groupId = undefined;
+        session.currentTabId = undefined;
+        await updateSession(session);
+      }
+      return ok(text(`Closed group ${gid} and its ${tabs.length} tab(s).`));
+    }
     if (action === "ungroup") {
       const tabIds: number[] = a.tabIds?.length ? a.tabIds : session.groupId !== undefined ? (await groupTabs(session)).map((t) => t.id!) : [];
       if (!tabIds.length) throw new Error("No tabs to ungroup");
@@ -350,7 +364,7 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
     else {
       const target = normalizeUrl(url);
       if (/^file:/i.test(target) && !(await chrome.extension.isAllowedFileSchemeAccess())) {
-        throw new Error("Opening local files needs permission: in chrome://extensions open Agent Chrome MCP > Details and turn on \"Allow access to file URLs\".");
+        throw new Error("Opening local files needs permission: in chrome://extensions open Agent Chrome > Details and turn on \"Allow access to file URLs\".");
       }
       await gate(target, session.title);
       const current = (await chrome.tabs.get(tabId)).url ?? "";
@@ -737,7 +751,7 @@ const handlers: Record<string, (a: Args, c: Ctx) => Promise<CallToolResult>> = {
 
   async history_search(a) {
     const granted = await chrome.permissions.contains({ permissions: ["history"] });
-    if (!granted) throw new Error("History access is off. The user can turn it on in the Agent Chrome MCP extension popup.");
+    if (!granted) throw new Error("History access is off. The user can turn it on in the Agent Chrome extension popup.");
     const items = await chrome.history.search({
       text: String(a.query),
       maxResults: Math.min(a.maxResults ?? 25, 100),

@@ -1,7 +1,7 @@
 // Messages between a relay server (cloud or local) and the browser extension over WebSocket.
 import type { CallToolResult, SessionInfo } from "./mcp.js";
 
-export const WS_SUBPROTOCOL = "agent-chrome-mcp.v1";
+export const WS_SUBPROTOCOL = "agentchrome.v1";
 /** Device tokens travel in a second Sec-WebSocket-Protocol entry: `acm-token.<token>`. */
 export const WS_TOKEN_PREFIX = "acm-token.";
 

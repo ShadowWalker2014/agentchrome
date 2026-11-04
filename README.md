@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="brand/logo.svg" width="88" height="88" alt="Agent Chrome MCP logo">
+  <img src="brand/logo.svg" width="88" height="88" alt="Agent Chrome logo">
 </p>
 
-<h1 align="center">agent-chrome-mcp</h1>
+<h1 align="center">agentchrome</h1>
 
 <p align="center"><b>Let your coding agents use the Chrome you already use.</b></p>
 
 <p align="center">
-  <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp/stargazers"><img src="https://img.shields.io/github/stars/ShadowWalker2014/agent-chrome-mcp?style=flat&color=2F6BFF&label=stars" alt="GitHub stars"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/ShadowWalker2014/agent-chrome-mcp?color=2F6BFF" alt="MIT license"></a>
-  <a href="https://agent-chrome-mcp.circo.workers.dev"><img src="https://img.shields.io/badge/server-Cloudflare-2F6BFF" alt="Hosted on Cloudflare"></a>
+  <a href="https://github.com/ShadowWalker2014/agentchrome/stargazers"><img src="https://img.shields.io/github/stars/ShadowWalker2014/agentchrome?style=flat&color=2F6BFF&label=stars" alt="GitHub stars"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/ShadowWalker2014/agentchrome?color=2F6BFF" alt="MIT license"></a>
+  <a href="https://agentchrome.dev"><img src="https://img.shields.io/badge/server-Cloudflare-2F6BFF" alt="Hosted on Cloudflare"></a>
 </p>
 
 <p align="center">
@@ -21,10 +21,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp"><img src="https://img.shields.io/badge/%E2%98%85_Star_on_GitHub-2F6BFF?style=for-the-badge&logo=github&logoColor=white" alt="Star on GitHub"></a>
+  <a href="https://github.com/ShadowWalker2014/agentchrome"><img src="https://img.shields.io/badge/%E2%98%85_Star_on_GitHub-2F6BFF?style=for-the-badge&logo=github&logoColor=white" alt="Star on GitHub"></a>
 </p>
 
-Agent Chrome MCP is a Chrome extension and an MCP server that let coding agents use your real, signed-in Chrome profiles. It works with Claude Code, Codex, Gemini CLI, Antigravity, Grok, Muse, Cursor, opencode and any other MCP client. Each agent works in its own tab group, and a blue border and an animated cursor show what it is doing. It can take screenshots and record video clips, and you can connect several Chrome profiles at once. The server runs on Cloudflare, or locally on your machine.
+Agent Chrome is a Chrome extension and an MCP server that let coding agents use your real, signed-in Chrome profiles. It works with Claude Code, Codex, Gemini CLI, Antigravity, Grok, Muse, Cursor, opencode and any other MCP client. Each agent works in its own tab group, and a blue border and an animated cursor show what it is doing. It can take screenshots and record video clips, and you can connect several Chrome profiles at once. The server runs on Cloudflare, or locally on your machine.
 
 <p align="center">
   <img src="docs/media/agent-view.gif" width="880" alt="Claude Code searching Wikipedia in Chrome: a blue border around the page, an animated cursor with the Claude Code logo, and a status pill with a Stop button">
@@ -40,15 +40,15 @@ You need Node.js 18 or newer and Google Chrome.
 ### 1. Run the installer
 
 ```sh
-curl -fsSL https://agent-chrome-mcp.circo.workers.dev/install | sh
+curl -fsSL https://agentchrome.dev/install | sh
 ```
 
 In one pass, the installer:
 
-1. Creates your account and saves the key to `~/.config/agent-chrome-mcp/config.json` with `chmod 600`.
-2. Adds an MCP server named `agent-chrome` to every agent it finds, in that agent's **user-level** config (table below).
-3. Writes the `agent-chrome` skill once, to `~/.agents/skills/agent-chrome`, and **symlinks** it into each agent's skills folder.
-4. Unpacks the extension to `~/.agent-chrome-mcp/extension`.
+1. Creates your account and saves the key to `~/.config/agentchrome/config.json` with `chmod 600`.
+2. Adds an MCP server named `agentchrome` to every agent it finds, in that agent's **user-level** config (table below).
+3. Writes the `agentchrome` skill once, to `~/.agents/skills/agentchrome`, and **symlinks** it into each agent's skills folder.
+4. Unpacks the extension to `~/.agentchrome/extension`.
 5. Prints a pairing code and copies it to your clipboard.
 
 To keep everything on your machine with no cloud at all, add `--local`. See [Local mode](#local-mode).
@@ -58,22 +58,22 @@ To keep everything on your machine with no cloud at all, add `--local`. See [Loc
 The installer opens `chrome://extensions` and shows the folder in Finder for you.
 
 1. In `chrome://extensions`, turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agent-chrome-mcp/extension`. Run `agent-chrome-mcp extension --path` to print the full path.
-3. Pin **Agent Chrome MCP**, click it, paste the pairing code and press **Connect**.
+2. Click **Load unpacked** and choose `~/.agentchrome/extension`. Run `agentchrome extension --path` to print the full path.
+3. Pin **Agent Chrome**, click it, paste the pairing code and press **Connect**.
 
-To add another profile (Work, Personal, a client's), switch to that profile, load the same folder, and run `agent-chrome-mcp pair` for a new code. Each profile appears as its own browser in `list_browsers`.
+To add another profile (Work, Personal, a client's), switch to that profile, load the same folder, and run `agentchrome pair` for a new code. Each profile appears as its own browser in `list_browsers`.
 
 ### 3. Use it
 
 Ask any agent:
 
-> Use agent-chrome to open news.ycombinator.com, screenshot it, and record a short clip scrolling the front page.
+> Use agentchrome to open news.ycombinator.com, screenshot it, and record a short clip scrolling the front page.
 
 ### Or let your agent install it
 
 Paste this into Claude Code, Codex or any other coding agent:
 
-> Install agent-chrome-mcp for me by following https://github.com/ShadowWalker2014/agent-chrome-mcp/blob/main/AGENT_INSTALL.md
+> Install agentchrome for me by following https://github.com/ShadowWalker2014/agentchrome/blob/main/AGENT_INSTALL.md
 
 The agent runs the installer, then tells you the one step only you can do: loading the extension in Chrome and pasting the code.
 
@@ -81,7 +81,7 @@ The agent runs the installer, then tells you the one step only you can do: loadi
 
 The server is a standard remote MCP server with OAuth, so chat apps can use it as a connector. You don't need the command line tool for this.
 
-**Claude** (claude.ai, Claude Desktop, Cowork): open **Customize > Connectors > Add custom connector**, enter `https://agent-chrome-mcp.circo.workers.dev/mcp` and press **Connect**.
+**Claude** (claude.ai, Claude Desktop, Cowork): open **Customize > Connectors > Add custom connector**, enter `https://agentchrome.dev/mcp` and press **Connect**.
 
 **ChatGPT**: turn on **Developer mode** under **Settings > Apps & Connectors > Advanced**, then create a connector with the same URL and choose **OAuth**.
 
@@ -92,7 +92,7 @@ A sign-in page opens. Paste your account key, or press **Create an account** if 
 | Agent | Config written (user level) | Format |
 |---|---|---|
 | Claude Code | `claude mcp add --scope user` (`~/.claude.json`) | `http` with an `Authorization` header |
-| Codex | `~/.codex/config.toml` | `[mcp_servers.agent-chrome]` with `url` and `http_headers` |
+| Codex | `~/.codex/config.toml` | `[mcp_servers.agentchrome]` with `url` and `http_headers` |
 | Gemini CLI | `~/.gemini/settings.json` | `httpUrl` and `headers` |
 | Antigravity | `agy mcp add` and `~/.gemini/antigravity/mcp_config.json` | `serverUrl` and `headers` |
 | Grok | `grok mcp add --scope user` (`~/.grok/config.toml`) | http with a header |
@@ -101,26 +101,26 @@ A sign-in page opens. Paste your account key, or press **Create an account** if 
 | opencode | `~/.config/opencode/opencode.json` | `type: "remote"` |
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` | `serverUrl` and `headers` |
 
-The installer backs up every JSON or TOML file it edits as `<file>.bak-agent-chrome`. The skill is linked into `~/.claude/skills`, `~/.codex/skills`, `~/.gemini/skills`, `~/.gemini/antigravity/global_skills`, `~/.cursor/skills` and `~/.config/opencode/skills`.
+The installer backs up every JSON or TOML file it edits as `<file>.bak-agentchrome`. The skill is linked into `~/.claude/skills`, `~/.codex/skills`, `~/.gemini/skills`, `~/.gemini/antigravity/global_skills`, `~/.cursor/skills` and `~/.config/opencode/skills`.
 
 > **Gemini CLI note:** Gemini turns off every MCP server in folders you haven't trusted, so `gemini mcp list` shows "Disabled" there. Trust the folder with `/permissions` inside Gemini, and the server turns on.
 
 ### Pick agents, or use OAuth instead of a key
 
 ```sh
-agent-chrome-mcp install claude codex grok   # only these agents
-agent-chrome-mcp install --oauth             # no secret in config files; each agent signs in through the browser
+agentchrome install claude codex grok   # only these agents
+agentchrome install --oauth             # no secret in config files; each agent signs in through the browser
 ```
 
-With OAuth, agents that support MCP sign-in (Claude Code, Codex, Gemini CLI and others) open a sign-in page on first use. Paste your account key once (`agent-chrome-mcp key` prints it) and the agent receives short-lived tokens, refreshed for 90 days.
+With OAuth, agents that support MCP sign-in (Claude Code, Codex, Gemini CLI and others) open a sign-in page on first use. Paste your account key once (`agentchrome key` prints it) and the agent receives short-lived tokens, refreshed for 90 days.
 
 ### Add it by hand
 
 ```sh
-claude mcp add --scope user --transport http agent-chrome https://agent-chrome-mcp.circo.workers.dev/mcp \
-  --header "Authorization: Bearer $(agent-chrome-mcp key)"
+claude mcp add --scope user --transport http agentchrome https://agentchrome.dev/mcp \
+  --header "Authorization: Bearer $(agentchrome key)"
 
-codex mcp add agent-chrome --url https://agent-chrome-mcp.circo.workers.dev/mcp --bearer-token-env-var AGENT_CHROME_MCP_KEY
+codex mcp add agentchrome --url https://agentchrome.dev/mcp --bearer-token-env-var AGENT_CHROME_MCP_KEY
 ```
 
 Any MCP client that speaks Streamable HTTP works. Use `https://<server>/mcp` with a bearer key, or point it at the URL and let OAuth discovery do the rest.
@@ -159,15 +159,15 @@ It also handles the parts of real websites that usually break browser agents:
 
 | Command | What it does |
 |---|---|
-| `agent-chrome-mcp setup [--server URL] [--key KEY] [--local]` | Creates an account or signs in, installs into agents, links the skill, unpacks the extension, prints a pairing code |
-| `agent-chrome-mcp pair` | Prints a new single-use pairing code, valid for 15 minutes |
-| `agent-chrome-mcp status` | Shows the account, paired browsers with online state, and which agents are configured |
-| `agent-chrome-mcp install [ids] [--oauth]` / `uninstall [ids]` | Adds or removes the MCP server and the skill |
-| `agent-chrome-mcp revoke <browser-id>` | Removes a paired Chrome profile; it disconnects immediately |
-| `agent-chrome-mcp rotate-key` | Replaces your account key and rewrites every agent config |
-| `agent-chrome-mcp key` | Prints your account key |
-| `agent-chrome-mcp serve [--install]` | Runs the local server; `--install` starts it at login with launchd |
-| `agent-chrome-mcp extension [--path]` | Unpacks the extension and shows how to load it |
+| `agentchrome setup [--server URL] [--key KEY] [--local]` | Creates an account or signs in, installs into agents, links the skill, unpacks the extension, prints a pairing code |
+| `agentchrome pair` | Prints a new single-use pairing code, valid for 15 minutes |
+| `agentchrome status` | Shows the account, paired browsers with online state, and which agents are configured |
+| `agentchrome install [ids] [--oauth]` / `uninstall [ids]` | Adds or removes the MCP server and the skill |
+| `agentchrome revoke <browser-id>` | Removes a paired Chrome profile; it disconnects immediately |
+| `agentchrome rotate-key` | Replaces your account key and rewrites every agent config |
+| `agentchrome key` | Prints your account key |
+| `agentchrome serve [--install]` | Runs the local server; `--install` starts it at login with launchd |
+| `agentchrome extension [--path]` | Unpacks the extension and shows how to load it |
 
 ## Tools
 
@@ -198,7 +198,7 @@ The tool names match Claude in Chrome, so prompts and skills written for it work
 
 ## Feature parity
 
-| | Claude in Chrome | Codex Chrome extension | agent-chrome-mcp |
+| | Claude in Chrome | Codex Chrome extension | agentchrome |
 |---|---|---|---|
 | Works with any MCP agent | Claude only | Codex only | **yes** |
 | Tab group per agent session | yes | yes | **yes**, and the agent can rename and recolor it |
@@ -216,22 +216,22 @@ The tool names match Claude in Chrome, so prompts and skills written for it work
 ## Local mode
 
 ```sh
-curl -fsSL https://agent-chrome-mcp.circo.workers.dev/install | sh -s -- --local
-agent-chrome-mcp serve --install    # starts the local server now and at every login (macOS)
+curl -fsSL https://agentchrome.dev/install | sh -s -- --local
+agentchrome serve --install    # starts the local server now and at every login (macOS)
 ```
 
-The server listens only on `127.0.0.1:47823` and rejects requests from web pages. In the extension popup, open **Server** and set it to `http://127.0.0.1:47823` before connecting. Screenshots and recordings are saved to `~/.agent-chrome-mcp/artifacts`.
+The server listens only on `127.0.0.1:47823` and rejects requests from web pages. In the extension popup, open **Server** and set it to `http://127.0.0.1:47823` before connecting. Screenshots and recordings are saved to `~/.agentchrome/artifacts`.
 
 ## Self-host on Cloudflare
 
 ```sh
-git clone https://github.com/ShadowWalker2014/agent-chrome-mcp && cd agent-chrome-mcp
+git clone https://github.com/ShadowWalker2014/agentchrome && cd agentchrome
 pnpm install
 npx wrangler login
-sh scripts/deploy-cloudflare.sh my-agent-chrome
+sh scripts/deploy-cloudflare.sh my-agentchrome
 ```
 
-The script creates a D1 database, a KV namespace and an R2 bucket, runs the migrations, deploys the Worker with its Durable Object, sets a session secret, and prints your own install line (`curl -fsSL https://my-agent-chrome.<you>.workers.dev/install | sh`). After you create your own account, set `SIGNUP_MODE` to `"closed"` so nobody else can sign up.
+The script creates a D1 database, a KV namespace and an R2 bucket, runs the migrations, deploys the Worker with its Durable Object, sets a session secret, and prints your own install line (`curl -fsSL https://my-agentchrome.<you>.workers.dev/install | sh`). After you create your own account, set `SIGNUP_MODE` to `"closed"` so nobody else can sign up.
 
 It runs comfortably on the Workers free tier for personal use. Durable Objects hibernate between calls, so an idle extension connection costs nothing.
 
@@ -246,7 +246,7 @@ It runs comfortably on the Workers free tier for personal use. Durable Objects h
 - **Rate limits:** sign-up, pairing and the sign-in page are rate-limited per IP address.
 - **Untrusted pages:** the skill and the server instructions tell agents never to follow instructions found inside web pages.
 
-Please report vulnerabilities through a [private GitHub security advisory](https://github.com/ShadowWalker2014/agent-chrome-mcp/security/advisories/new).
+Please report vulnerabilities through a [private GitHub security advisory](https://github.com/ShadowWalker2014/agentchrome/security/advisories/new).
 
 ## How it works
 
@@ -264,7 +264,7 @@ The extension keeps one WebSocket open to the server. The server runs on Cloudfl
 
 ```sh
 pnpm install
-pnpm --filter @agent-chrome-mcp/server exec wrangler d1 migrations apply agent-chrome-mcp --local
+pnpm --filter @agentchrome/server exec wrangler d1 migrations apply agent-chrome-mcp --local
 pnpm dev:server                         # Worker on http://127.0.0.1:8787
 node scripts/build-all.mjs              # extension, CLI and public assets
 pnpm test:e2e                           # end-to-end tests: real Chromium, the extension and the MCP SDK client
@@ -277,17 +277,17 @@ See [AGENTS.md](AGENTS.md) for the architecture and the rules for contributors.
 
 ## Star history
 
-<a href="https://star-history.com/#ShadowWalker2014/agent-chrome-mcp&Date">
+<a href="https://star-history.com/#ShadowWalker2014/agentchrome&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ShadowWalker2014/agent-chrome-mcp&type=Date&theme=dark">
-    <img alt="Star history chart for agent-chrome-mcp" src="https://api.star-history.com/svg?repos=ShadowWalker2014/agent-chrome-mcp&type=Date" width="720">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=ShadowWalker2014/agentchrome&type=Date&theme=dark">
+    <img alt="Star history chart for agentchrome" src="https://api.star-history.com/svg?repos=ShadowWalker2014/agentchrome&type=Date" width="720">
   </picture>
 </a>
 
-If agent-chrome-mcp saves you time, please star it. Stars help other developers find the project.
+If agentchrome saves you time, please star it. Stars help other developers find the project.
 
 <p>
-  <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp"><img src="https://img.shields.io/badge/%E2%98%85_Star_on_GitHub-2F6BFF?style=for-the-badge&logo=github&logoColor=white" alt="Star on GitHub"></a>
+  <a href="https://github.com/ShadowWalker2014/agentchrome"><img src="https://img.shields.io/badge/%E2%98%85_Star_on_GitHub-2F6BFF?style=for-the-badge&logo=github&logoColor=white" alt="Star on GitHub"></a>
 </p>
 
 ## License

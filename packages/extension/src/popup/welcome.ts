@@ -96,7 +96,7 @@ $("signin").onclick = async () => {
   }
   render();
 };
-$("copyPrompt").onclick = (e) => copy("Use agent-chrome to open news.ycombinator.com and take a screenshot", (e.currentTarget as HTMLElement).querySelector(".copy") as HTMLElement);
+$("copyPrompt").onclick = (e) => copy("Use agentchrome to open news.ycombinator.com and take a screenshot", (e.currentTarget as HTMLElement).querySelector(".copy") as HTMLElement);
 
 chrome.runtime.onMessage.addListener((m) => m?.type === "acm:status-changed" && render());
 render();

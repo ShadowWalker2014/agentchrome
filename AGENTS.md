@@ -1,6 +1,6 @@
-# AGENTS.md — agent-chrome-mcp
+# AGENTS.md — agentchrome
 
-Open-source Chrome extension and remote MCP server. Any MCP agent drives the user's real, signed-in Chrome profiles. The server runs on Cloudflare (production: https://agent-chrome-mcp.circo.workers.dev, Circo account) or locally on 127.0.0.1.
+Open-source Chrome extension and remote MCP server. Any MCP agent drives the user's real, signed-in Chrome profiles. The server runs on Cloudflare (production: https://agentchrome.dev, Circo account) or locally on 127.0.0.1.
 
 ## Layout
 
@@ -9,8 +9,8 @@ packages/
   protocol/   Shared, dependency-free: tool catalog (tools.ts), MCP Streamable-HTTP handler (mcp.ts), relay wire types (wire.ts)
   server/     Cloudflare Worker: OAuth 2.1 provider, /mcp, pairing and artifact APIs, AccountHub Durable Object (one per account)
   extension/  MV3 extension: background service worker, content script (refs, a11y tree, overlay), offscreen recorder
-  cli/        `agent-chrome-mcp` CLI: setup, pairing, agent installers, skill symlinks, local server
-skills/agent-chrome/SKILL.md   Skill installed into every agent (one canonical copy, symlinked)
+  cli/        `agentchrome` CLI: setup, pairing, agent installers, skill symlinks, local server
+skills/agentchrome/SKILL.md   Skill installed into every agent (one canonical copy, symlinked)
 site/        Landing page and install.sh template (build-all.mjs fills in __SERVER__)
 brand/       logo.svg (source of truth), wordmark, rendered icons (scripts/render-icons.mjs)
 tests/e2e/   End-to-end suites: real Chromium + extension + MCP SDK client
@@ -41,10 +41,10 @@ pnpm install
 node scripts/build-all.mjs                    # extension + CLI + server/public (uses DEFAULT_SERVER)
 pnpm dev:server                               # wrangler dev on :8787 (apply D1 migrations with --local first)
 pnpm test:e2e                                 # needs the server on :8787
-ACM_SERVER=https://agent-chrome-mcp.circo.workers.dev pnpm test:e2e
+ACM_SERVER=https://agentchrome.dev pnpm test:e2e
 sh tests/e2e/local.sh                         # local mode
 node --test tests/e2e/oauth.test.mjs          # OAuth flow
 cd packages/server && npx wrangler deploy     # production deploy (Circo account)
 ```
 
-Production resources on the Circo account were created with the `cf` CLI: D1 `agent-chrome-mcp`, KV `agent-chrome-mcp-oauth`, R2 `agent-chrome-mcp-artifacts` (lifecycle rule deletes objects after 7 days), and the secret `SESSION_SECRET`.
+Production resources on the Circo account were created with the `cf` CLI and keep their original names: Worker `agent-chrome-mcp` (served at `agentchrome.dev`), D1 `agent-chrome-mcp`, KV `agent-chrome-mcp-oauth`, R2 `agent-chrome-mcp-artifacts` (lifecycle rule deletes objects after 7 days), and the secret `SESSION_SECRET`.
