@@ -13,10 +13,9 @@
 
 - Bing Webmaster Tools: added https://agentchrome.dev/ (DNS CNAME verification) and submitted the sitemap.
 - Claude directory: connector submitted for review under Circo, Inc. Reviewer key is in ~/.agentchrome-registry/claude-reviewer-key.txt.
-- ChatGPT plugin: uploaded 0.1.1 at https://platform.openai.com/plugins/manage/plugin_asdk_app_6aeb8096f22c8191979b97930ed83cf8 under Circo, Inc. (OpenAI's upload 404 was fixed on their side). Domain verified (token in KV config:openai_apps_challenge), OAuth connected with the reviewer account, scan done with no blocking findings, review information saved. Fixed two scan findings: handle_dialog is now destructive, and chat apps get a read-only screenshot without save. Waiting for Kai's go-ahead to press Submit for review.
+- ChatGPT plugin: uploaded 0.1.1 at https://platform.openai.com/plugins/manage/plugin_asdk_app_6aeb8096f22c8191979b97930ed83cf8 under Circo, Inc. (OpenAI's upload 404 was fixed on their side). Domain verified (token in KV config:openai_apps_challenge), OAuth connected with the reviewer account, scan done with no blocking findings, review information saved. Fixed two scan findings: handle_dialog is now destructive, and chat apps get a read-only screenshot without save. Submitted for review on 2026-11-04 (status: Version 0.1.1 · In review).
 
 ## To do
 
-- Press Submit for review on the ChatGPT plugin once Kai approves.
 - Every week, check Search Console queries and pages, and check the AI Overview with `google_serp` for "chrome mcp server", "claude code chrome", "codex chrome extension" and "playwright mcp vs chrome devtools mcp".
 - List on Smithery, Glama, mcp.so and mcpservers.org.
