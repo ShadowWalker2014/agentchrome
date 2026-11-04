@@ -1,91 +1,152 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Agent Chrome MCP — your real Chrome, for every coding agent</title>
-<meta name="description" content="Open-source remote MCP server and Chrome extension. Let Claude Code, Codex, Gemini, Antigravity, Grok, Muse, Cursor and opencode drive your signed-in Chrome profiles: tab groups, screenshots, video recording, secure pairing.">
-<meta property="og:title" content="Agent Chrome MCP"><meta property="og:description" content="Your real Chrome, for every coding agent."><meta property="og:image" content="/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<title>Agent Chrome MCP — let your coding agents use your real Chrome</title>
+<meta name="description" content="Agent Chrome MCP lets coding agents like Claude Code, Codex, Gemini and Grok use your real Chrome profiles, with the sites you're already signed into. Open source.">
+<meta property="og:title" content="Agent Chrome MCP"><meta property="og:description" content="Let your coding agents use the Chrome you already use."><meta property="og:image" content="/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0A0A0B;--fg:#FAFAFA;--muted:#A1A1AA;--subtle:#71717A;--line:rgba(255,255,255,.08);--card:rgba(255,255,255,.025);--accent:#5B8DFF}
-*{box-sizing:border-box}html{background:var(--bg)}
+:root{--bg:#0A0A0B;--bg2:#111113;--fg:#FAFAFA;--muted:#A1A1AA;--subtle:#71717A;--line:rgba(255,255,255,.08);--card:rgba(255,255,255,.025);--blue:#2F6BFF;--blue2:#5B8DFF}
+*{box-sizing:border-box}html{background:var(--bg);scroll-behavior:smooth}
 body{margin:0;color:var(--fg);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;
-  background:radial-gradient(800px 420px at 50% -120px,rgba(47,107,255,.22),transparent 70%),var(--bg)}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(700px 400px at 50% 0,#000,transparent);opacity:.5}
-main{position:relative;max-width:1040px;margin:0 auto;padding:24px 24px 96px}
-nav{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.02em;height:48px}
-nav img{border-radius:8px}nav .links{margin-left:auto;display:flex;gap:6px}
-nav a{color:var(--muted);text-decoration:none;font-weight:500;font-size:14px;padding:6px 12px;border-radius:8px}nav a:hover{color:var(--fg);background:var(--card)}
-.hero{text-align:center;padding:96px 0 40px}
-.badge{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:999px;font-size:13px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);background:var(--card)}
-.badge i{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-h1{font-size:clamp(40px,7vw,72px);font-weight:600;line-height:1.02;letter-spacing:-.045em;margin:24px auto 18px;max-width:820px}
-h1 em{font-style:normal;background:linear-gradient(180deg,#8DB2FF,#3D74FF);-webkit-background-clip:text;background-clip:text;color:transparent}
-.lead{font-size:18px;color:var(--muted);max-width:620px;margin:0 auto}
-.cmd{margin:36px auto 12px;max-width:560px;display:flex;align-items:center;gap:12px;height:52px;padding:0 6px 0 18px;border-radius:12px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line),0 20px 40px -20px rgba(0,0,0,.6);font:14px "JetBrains Mono",ui-monospace,Menlo,monospace;text-align:left}
-.cmd span{flex:1;overflow-x:auto;white-space:nowrap}.cmd b{color:var(--subtle);font-weight:400;margin-right:8px}
-.cmd button{height:40px;padding:0 16px;border:0;border-radius:8px;background:#2F6BFF;color:#fff;font:500 14px Inter,system-ui;cursor:pointer}.cmd button:hover{opacity:.9}
-.small{font-size:13.5px;color:var(--subtle)}
-.small code,pre{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace}
-.small code{font-size:12.5px;color:var(--muted);background:var(--card);box-shadow:inset 0 0 0 1px var(--line);padding:2px 6px;border-radius:6px}
-.frame{margin:64px auto 0;max-width:880px;border-radius:14px;padding:2px;background:#2F6BFF;box-shadow:0 0 0 1px rgba(47,107,255,.4),0 0 40px rgba(47,107,255,.25),0 0 120px rgba(47,107,255,.12)}
-.frame .win{border-radius:12px;background:#111113;overflow:hidden}
-.bar{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-bottom:1px solid var(--line)}
-.bar i{width:11px;height:11px;border-radius:50%;background:#2A2A2E}
-.tab{margin-left:12px;display:flex;align-items:center;gap:8px;height:26px;padding:0 10px;border-radius:7px;background:rgba(47,107,255,.18);color:#9DBBFF;font-size:12.5px;font-weight:500}
-.tab::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--accent)}
-.screen{position:relative;height:300px;padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.screen .blk{border-radius:10px;background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px var(--line)}
-.pill{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;height:36px;padding:0 5px 0 14px;border-radius:999px;background:rgba(24,24,27,.9);box-shadow:0 0 0 1px rgba(255,255,255,.1);font-size:13px;font-weight:500;white-space:nowrap}
-.pill i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(47,107,255,.2)}
-.pill b{height:26px;display:inline-flex;align-items:center;padding:0 11px;border-radius:999px;background:rgba(255,255,255,.08);font-weight:500;font-size:12px}
-.cursor{position:absolute;left:58%;top:40%;width:22px}
-h2{font-size:30px;font-weight:600;letter-spacing:-.035em;margin:112px 0 8px;text-align:center}
-.sub{text-align:center;color:var(--muted);margin:0 0 36px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1px;background:var(--line);border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
-.card{background:var(--bg);padding:26px}.card h3{margin:0 0 6px;font-size:15px;font-weight:600;letter-spacing:-.015em}.card p{margin:0;color:var(--muted);font-size:14.5px}
-.card svg{width:20px;height:20px;margin-bottom:14px;color:var(--accent)}
-.agents{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.agents span{height:34px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);background:var(--card);font-size:14px;color:var(--muted)}
-pre{background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px var(--line);border-radius:12px;padding:20px;overflow-x:auto;font-size:13px;line-height:1.7;color:#D4D4D8;max-width:820px;margin:0 auto}
+  background:radial-gradient(900px 480px at 50% -140px,rgba(47,107,255,.24),transparent 70%),var(--bg)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(700px 420px at 50% 0,#000,transparent);opacity:.5}
+a{color:inherit}
+main{position:relative;max-width:1120px;margin:0 auto;padding:20px 24px 96px}
+nav{display:flex;align-items:center;gap:10px;height:52px;font-weight:600;font-size:15px;letter-spacing:-.02em}
+nav img{border-radius:8px}
+nav .links{margin-left:auto;display:flex;align-items:center;gap:4px}
+nav .links a{color:var(--muted);text-decoration:none;font-weight:500;font-size:14px;padding:6px 12px;border-radius:8px}
+nav .links a:hover{color:var(--fg);background:var(--card)}
+.star{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 4px 0 12px;border-radius:9px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px var(--line);color:var(--fg)!important;text-decoration:none;font-weight:500;font-size:14px;transition:background .15s}
+.star:hover{background:rgba(255,255,255,.1)}
+.star svg{width:16px;height:16px}
+.star b{display:inline-flex;align-items:center;height:26px;padding:0 9px;border-radius:7px;background:rgba(255,255,255,.08);font-weight:500;font-variant-numeric:tabular-nums}
+.hero{text-align:center;padding:72px 0 0}
+.badge{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 13px;border-radius:999px;font-size:13px;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);background:var(--card);text-decoration:none}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--blue2);box-shadow:0 0 10px var(--blue2)}
+.badge:hover{color:var(--fg)}
+h1{font-size:clamp(38px,5.6vw,64px);font-weight:600;line-height:1.04;letter-spacing:-.045em;margin:22px auto 18px;max-width:1000px;text-wrap:balance}
+h1 em{font-style:normal;background:linear-gradient(180deg,#9DBBFF,#3D74FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:18.5px;color:var(--muted);max-width:660px;margin:0 auto}
+.cmd{margin:34px auto 10px;max-width:600px;display:flex;align-items:center;gap:12px;height:54px;padding:0 6px 0 18px;border-radius:12px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line),0 20px 40px -20px rgba(0,0,0,.6);font:14px "JetBrains Mono",ui-monospace,Menlo,monospace;text-align:left}
+.cmd span{flex:1;overflow-x:auto;white-space:nowrap;scrollbar-width:none}.cmd b{color:var(--subtle);font-weight:400;margin-right:8px}
+.cmd button{height:42px;padding:0 18px;border:0;border-radius:8px;background:var(--blue);color:#fff;font:500 14px Inter,system-ui;cursor:pointer;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15)}
+.cmd button:hover{background:#1F55F0}
+.sub{font-size:13.5px;color:var(--subtle);margin:0}
+.sub a{color:var(--muted)}
+.ctas{display:flex;justify-content:center;gap:10px;margin-top:18px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;text-decoration:none;font-weight:500;font-size:14.5px;box-shadow:inset 0 0 0 1px var(--line);background:var(--card);color:var(--fg)}
+.btn:hover{background:rgba(255,255,255,.07)}
+.btn svg{width:16px;height:16px}
+.demo{margin:56px auto 0;max-width:1000px;border-radius:16px;padding:3px;background:var(--blue);box-shadow:0 0 0 1px rgba(47,107,255,.5),0 0 50px rgba(47,107,255,.35),0 40px 120px -20px rgba(47,107,255,.35)}
+.demo .win{border-radius:13px;overflow:hidden;background:#fff}
+.demo .bar{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;background:#1A1A1D}
+.demo .bar i{width:11px;height:11px;border-radius:50%;background:#3A3A3F}
+.demo .tab{margin-left:12px;display:flex;align-items:center;gap:7px;height:26px;padding:0 11px;border-radius:7px;background:rgba(47,107,255,.25);color:#BFD2FF;font-size:12.5px;font-weight:500}
+.demo .tab::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--blue2)}
+.demo .tab.b{background:rgba(14,165,198,.2);color:#A5E6F5}.demo .tab.b::before{background:#22C3E6}
+.demo img{display:block;width:100%;height:auto}
+.caption{text-align:center;color:var(--subtle);font-size:13.5px;margin:14px 0 0}
+.agents{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:72px auto 0;max-width:900px}
+.agents .label{width:100%;text-align:center;color:var(--subtle);font-size:13px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em}
+.ag{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 7px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);background:var(--card);font-size:14px;color:#D4D4D8}
+.ag i{width:26px;height:26px;border-radius:8px;background:#fff;display:grid;place-items:center;color:#0A0A0B}
+.ag i svg{width:16px;height:16px;display:block}
+h2{font-size:clamp(28px,4vw,38px);font-weight:600;letter-spacing:-.035em;margin:120px 0 10px;text-align:center;line-height:1.1}
+.h2sub{text-align:center;color:var(--muted);margin:0 auto 44px;max-width:640px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.panel{border-radius:16px;background:var(--bg2);box-shadow:0 0 0 1px var(--line);overflow:hidden;display:flex;flex-direction:column}
+.panel .media{background:#fff;border-bottom:1px solid var(--line);aspect-ratio:1600/946;overflow:hidden}
+.panel .media img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.panel .media.dark{background:#0E0E10;display:grid;place-items:center;padding:20px}
+.panel .media.dark img{width:auto;height:100%;max-height:420px;object-fit:contain;border-radius:12px;box-shadow:0 0 0 1px var(--line),0 20px 40px -10px rgba(0,0,0,.6)}
+.panel .txt{padding:22px 24px 26px}
+.panel h3{margin:0 0 6px;font-size:17px;font-weight:600;letter-spacing:-.02em}
+.panel p{margin:0;color:var(--muted);font-size:15px}
+.panel code,.small code,li code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12.5px;color:#D4D4D8;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:6px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+.card{background:var(--bg);padding:26px}.card h3{margin:0 0 6px;font-size:15.5px;font-weight:600;letter-spacing:-.015em}.card p{margin:0;color:var(--muted);font-size:14.5px}
+.card svg{width:20px;height:20px;margin-bottom:14px;color:var(--blue2)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;counter-reset:s}
+.step{position:relative;padding:24px;border-radius:16px;background:var(--bg2);box-shadow:0 0 0 1px var(--line)}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:600;font-size:13px;margin-bottom:14px;box-shadow:0 0 0 5px rgba(47,107,255,.18)}
+.step h3{margin:0 0 6px;font-size:16px;font-weight:600}.step p{margin:0;color:var(--muted);font-size:14.5px}
+pre{background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px var(--line);border-radius:12px;padding:20px;overflow-x:auto;font:13px/1.7 "JetBrains Mono",ui-monospace,Menlo,monospace;color:#D4D4D8;margin:0}
 pre .c{color:var(--subtle)}
-footer{margin-top:112px;padding-top:28px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:16px;color:var(--subtle);font-size:13.5px}footer a{color:inherit;text-decoration:none}footer a:hover{color:var(--fg)}
-@media (max-width:640px){.hero{padding-top:56px}.screen{grid-template-columns:1fr;height:240px}.cmd{font-size:12.5px}}
+.chat{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chat .panel .txt ol{margin:10px 0 0;padding-left:20px;color:var(--muted);font-size:14.5px}.chat li{margin:5px 0}
+.chat .logo{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.chat .logo i{width:30px;height:30px;border-radius:9px;background:#fff;display:grid;place-items:center;color:#0A0A0B}.chat .logo i svg{width:18px;height:18px}
+.final{text-align:center;margin-top:120px;padding:56px 24px;border-radius:20px;background:radial-gradient(600px 240px at 50% 0,rgba(47,107,255,.22),transparent),var(--bg2);box-shadow:0 0 0 1px var(--line)}
+.final h2{margin:0 0 10px}
+.final .ctas{margin-top:24px}
+.btn.primary{background:var(--blue);box-shadow:none}.btn.primary:hover{background:#1F55F0}
+footer{margin-top:72px;padding-top:28px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:18px;color:var(--subtle);font-size:13.5px}footer a{text-decoration:none}footer a:hover{color:var(--fg)}
+@media (max-width:820px){.split,.chat,.steps,.grid{grid-template-columns:1fr}.hero{padding-top:44px}nav .links a:not(.star){display:none}.cmd{font-size:12px}}
 </style></head>
 <body><main>
-<nav><img src="/logo.svg" width="28" height="28" alt="">agent-chrome-mcp<div class="links"><a href="#how">Setup</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp">GitHub</a></div></nav>
+<nav><img src="/logo.svg" width="28" height="28" alt="">agent-chrome-mcp
+  <div class="links"><a href="#how">How it works</a><a href="#chat">Claude &amp; ChatGPT</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp#tools">Docs</a>
+  <a class="star" href="https://github.com/ShadowWalker2014/agent-chrome-mcp" aria-label="Star on GitHub"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Star<b class="stars">★</b></a></div></nav>
 
 <section class="hero">
-<span class="badge"><i></i>Open source · MIT · Cloudflare or local</span>
-<h1>Your real Chrome,<br><em>for every coding agent.</em></h1>
-<p class="lead">A Chrome extension and remote MCP server. Claude Code, Codex, Gemini, Antigravity, Grok, Muse, Cursor and opencode drive your signed-in Chrome profiles, each in its own tab group, with a glowing border while they work.</p>
+<a class="badge" href="https://github.com/ShadowWalker2014/agent-chrome-mcp"><i></i>Open source · MIT · Cloudflare or local</a>
+<h1>Let your coding agents use<br><em>the Chrome you already use.</em></h1>
+<p class="lead">A Chrome extension and MCP server that let Claude Code, Codex, Gemini, Grok and other agents work in your signed-in Chrome profiles. Each agent gets its own tab group, and you can see exactly what it's doing.</p>
 <div class="cmd"><span><b>$</b>curl -fsSL __SERVER__/install | sh</span><button onclick="navigator.clipboard.writeText('curl -fsSL __SERVER__/install | sh');this.textContent='Copied'">Copy</button></div>
-<p class="small">One command: account, every agent configured, skill linked, extension unpacked, pairing code. Fully local: add <code>-s -- --local</code></p>
+<p class="sub">Sets up every agent on your machine in one step. Or <a href="https://github.com/ShadowWalker2014/agent-chrome-mcp/blob/main/AGENT_INSTALL.md">let your agent install it</a>.</p>
 
-<div class="frame"><div class="win">
-  <div class="bar"><i></i><i></i><i></i><span class="tab">Claude Code</span></div>
-  <div class="screen"><div class="blk"></div><div class="blk"></div>
-    <svg class="cursor" viewBox="40 40 50 60"><path d="M57 52.5v31.2c0 1.3 1.6 1.9 2.5 1l7.1-7 5.4 11.9c.4.8 1.3 1.2 2.1.8l3.9-1.8c.8-.4 1.2-1.3.8-2.1l-5.4-11.8h10.3c1.3 0 2-1.6 1-2.5L59.5 51.5c-.9-.9-2.5-.3-2.5 1z" fill="#FAFAFA" stroke="#0A0A0B" stroke-width="2"/></svg>
-    <div class="pill"><i></i>Claude Code is working<b>Stop</b></div>
-  </div>
+<div class="demo"><div class="win">
+  <div class="bar"><i></i><i></i><i></i><span class="tab">Claude Code</span><span class="tab b">Codex</span></div>
+  <img src="/media/agent-view.gif" width="1600" height="946" alt="Claude Code searching Wikipedia: a blue border around the page, an animated cursor with the Claude Code logo, and a status pill with a Stop button">
 </div></div>
+<p class="caption">Recorded by the extension itself while Claude Code searched Wikipedia.</p>
 </section>
 
-<h2>Everything the first-party extensions do</h2>
-<p class="sub">Every tool name Claude in Chrome uses, plus what it lacks: multiple Chrome profiles and video clips.</p>
-<div class="grid">
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7 17 2.5-7.5L21 11z"/></svg><h3>Full browser control</h3><p>Click, type, keys, scroll, drag, zoom, navigate, accessibility refs, find, form fill, page text, JavaScript, uploads, dialogs.</p></div>
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 9h18"/></svg><h3>A tab group per agent</h3><p>Each session gets its own named, colored group. Rename, recolor, collapse, move or ungroup with tab_groups.</p></div>
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10l5-3v10l-5-3"/></svg><h3>Screenshots and video</h3><p>Viewport, full-page and zoomed shots. MP4 clips or GIFs with click highlights, returned as download links.</p></div>
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="10" r="2.5"/><path d="M3 19c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5M15 15c2.6-.4 4.6.8 5.5 3"/></svg><h3>Many Chrome profiles</h3><p>Pair Work, Personal and client profiles. Pick one with list_browsers and select_browser, or per call.</p></div>
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><h3>Secure by default</h3><p>Hashed keys and per-profile device tokens, single-use pairing codes, OAuth 2.1 with PKCE, revocation, a Stop button on every page.</p></div>
-<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18a4.5 4.5 0 01-.5-9A6 6 0 0118 8.5a4 4 0 01-1 9.5z"/></svg><h3>Cloud or local</h3><p>Cloudflare Workers and Durable Objects, one command to deploy your own, or fully local on 127.0.0.1.</p></div>
+<div class="agents"><div class="label">Works with</div>__AGENT_CHIPS__<span class="ag" style="padding-left:14px">any MCP client</span></div>
+
+<h2 id="how">You always know what the agent is doing</h2>
+<p class="h2sub">Agents work next to you, in their own tabs. You can see each move and stop them with one click.</p>
+<div class="split">
+  <div class="panel"><div class="media"><img src="/media/hero.png" alt="The agent typing into Wikipedia's search box, with its own cursor labelled Claude Code" loading="lazy"></div>
+    <div class="txt"><h3>Its own cursor, border and Stop button</h3><p>The agent's cursor glides to each target, turns into a hand over links and an I-beam over text, and shows the agent's logo. A blue border and a status pill mark the tab it's working in. Your own mouse never moves.</p></div></div>
+  <div class="panel"><div class="media"><img src="/media/clean-recording.gif" alt="A clean recording with a normal cursor and no indicators" loading="lazy"></div>
+    <div class="txt"><h3>Clean screen recordings</h3><p>Ask for a video and you get an MP4 that looks like a person using the page: a normal cursor, with no border, labels or pill. Good for bug reports, docs and demos.</p></div></div>
+  <div class="panel"><div class="media dark"><img src="/media/popup-dark.png" alt="The toolbar popup listing Claude Code and Codex sessions" loading="lazy"></div>
+    <div class="txt"><h3>A tab group for every agent</h3><p>Run Claude Code and Codex at the same time. Each gets its own named, colored tab group, and the toolbar popup lets you pause one or stop all.</p></div></div>
+  <div class="panel"><div class="media"><img src="/media/welcome.png" alt="The welcome page: three setup steps and a pairing code field" loading="lazy"></div>
+    <div class="txt"><h3>All your Chrome profiles</h3><p>Connect Work, Personal and client profiles with a one-time code each. Agents pick a profile by name and stay signed in wherever you are.</p></div></div>
 </div>
 
-<h2 id="how">Works with your agents</h2>
-<p class="sub">Setup writes the MCP entry for each one and symlinks a shared skill.</p>
-<div class="agents"><span>Claude Code</span><span>Codex</span><span>Gemini CLI</span><span>Antigravity</span><span>Grok</span><span>Muse</span><span>Cursor</span><span>opencode</span><span>Windsurf</span><span>any MCP client</span></div>
+<h2>Built for real websites</h2>
+<p class="h2sub">The same tools as Claude in Chrome, plus the cases that usually break browser agents.</p>
+<div class="grid">
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7 17 2.5-7.5L21 11z"/></svg><h3>Full browser control</h3><p>Click, type, keyboard shortcuts, scroll, zoom, forms, page text, accessibility tree, JavaScript, console and network logs.</p></div>
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg><h3>Drag and drop</h3><p>Native HTML5 drag and drop for boards and file drop areas, plus pointer drags for sliders and sortable lists.</p></div>
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0l-4 4m4-4l4 4M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/></svg><h3>File uploads</h3><p>Real files from your computer or generated content, without the native file picker. Picker pop-ups are caught and filled.</p></div>
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M8 12h8"/></svg><h3>Dialogs never freeze it</h3><p>Alerts, confirms, prompts and "Leave site?" are reported and answered instead of hanging the agent.</p></div>
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10l5-3v10l-5-3"/></svg><h3>Screenshots and video</h3><p>Viewport, full-page and zoomed screenshots, MP4 clips and GIFs, returned as download links.</p></div>
+<div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><h3>Secure by default</h3><p>OAuth 2.1 or hashed account keys, single-use pairing codes, per-profile revocation, optional approval for each new site.</p></div>
+</div>
+
+<h2>Set up in a minute</h2>
+<p class="h2sub">One command configures every agent on your machine at user level.</p>
+<div class="steps">
+<div class="step"><h3>Run the installer</h3><p>It creates your account, adds the MCP server to Claude Code, Codex, Gemini, Antigravity, Grok, Muse, Cursor and opencode, and links the skill.</p></div>
+<div class="step"><h3>Load the extension</h3><p>The installer opens <code>chrome://extensions</code> and the folder to load. Then paste the pairing code it printed.</p></div>
+<div class="step"><h3>Ask your agent</h3><p>"Use agent-chrome to open my dashboard and record the checkout flow." It works in its own tab group.</p></div>
+</div>
+
+<h2 id="chat">Also works in Claude and ChatGPT</h2>
+<p class="h2sub">It's a standard remote MCP server with OAuth, so chat apps can use it as a connector. No command line needed.</p>
+<div class="chat">
+<div class="panel"><div class="txt"><div class="logo"><i>__ICON_CLAUDE__</i><h3 style="margin:0">Claude</h3></div><ol><li>Open <b>Customize › Connectors › Add custom connector</b>.</li><li>Paste <code>__SERVER__/mcp</code> and press <b>Connect</b>.</li><li>Sign in or create an account, then say <i>"Connect my Chrome"</i>.</li></ol></div></div>
+<div class="panel"><div class="txt"><div class="logo"><i>__ICON_OPENAI__</i><h3 style="margin:0">ChatGPT</h3></div><ol><li>Turn on <b>Developer mode</b> in <b>Settings › Apps &amp; Connectors</b>.</li><li>Create a connector with <code>__SERVER__/mcp</code> and choose <b>OAuth</b>.</li><li>Sign in or create an account, then say <i>"Connect my Chrome"</i>.</li></ol></div></div>
+</div>
 
 <h2>Or add it by hand</h2>
-<p class="sub">API key in a header, or OAuth with no secrets in config files.</p>
+<p class="h2sub">An API key in a header, or OAuth with no secrets in config files.</p>
 <pre><span class="c"># API key</span>
 claude mcp add --scope user --transport http agent-chrome __SERVER__/mcp \
   --header "Authorization: Bearer $(agent-chrome-mcp key)"
@@ -93,5 +154,24 @@ claude mcp add --scope user --transport http agent-chrome __SERVER__/mcp \
 <span class="c"># OAuth: the sign-in page asks for your account key once</span>
 claude mcp add --scope user --transport http agent-chrome __SERVER__/mcp</pre>
 
-<footer><span>MIT licensed</span><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp">Source and docs</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp#self-host-on-cloudflare">Self-host</a><a href="/agent-chrome-mcp-extension.zip">Extension zip</a></footer>
-</main></body></html>
+<section class="final">
+<h2>Open source, and free to self-host</h2>
+<p class="h2sub" style="margin-bottom:0">Run it on our server, deploy your own to Cloudflare with one script, or keep everything on your machine with local mode.</p>
+<div class="ctas">
+  <a class="btn primary" href="https://github.com/ShadowWalker2014/agent-chrome-mcp"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 01.67.42l1.88 3.8 4.2.61a.75.75 0 01.41 1.28l-3.04 2.96.72 4.18a.75.75 0 01-1.09.79L8 12.31l-3.75 1.98a.75.75 0 01-1.09-.79l.72-4.18L.84 6.36a.75.75 0 01.41-1.28l4.2-.61L7.33.67A.75.75 0 018 .25z"/></svg>Star on GitHub <span class="stars-inline"></span></a>
+  <a class="btn" href="https://github.com/ShadowWalker2014/agent-chrome-mcp#self-host-on-cloudflare">Self-host on Cloudflare</a>
+  <a class="btn" href="/agent-chrome-mcp-extension.zip">Download the extension</a>
+</div>
+</section>
+
+<footer><span>MIT licensed</span><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp">GitHub</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp/blob/main/AGENT_INSTALL.md">Agent install guide</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp#security">Security</a><a href="https://github.com/ShadowWalker2014/agent-chrome-mcp/issues">Issues</a></footer>
+</main>
+<script>
+fetch("https://api.github.com/repos/ShadowWalker2014/agent-chrome-mcp").then(r => r.ok ? r.json() : null).then(d => {
+  if (!d) return;
+  const n = d.stargazers_count, t = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n);
+  document.querySelectorAll(".stars").forEach(e => e.textContent = t);
+  document.querySelectorAll(".stars-inline").forEach(e => e.textContent = "· " + t);
+}).catch(() => {});
+</script>
+</body></html>
