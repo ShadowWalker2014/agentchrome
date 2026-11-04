@@ -132,3 +132,34 @@ test("pairing_code tool returns a working code", async () => {
   const tools = await (await fetch(`${SERVER}/mcp`, { method: "POST", headers: { ...h, "mcp-session-id": sid }, body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "tools/list" }) })).json();
   for (const t of tools.result.tools) assert.equal(typeof t.annotations?.readOnlyHint, "boolean", t.name);
 });
+
+test("chat apps (ChatGPT, Claude) get one tool per action; coding agents get full parity", async () => {
+  const acct = await signup();
+  const as = await (await fetch(`${SERVER}/.well-known/oauth-authorization-server`)).json();
+  const toolsFor = async (clientName) => {
+    const redirect = "https://chatgpt.com/connector_platform_oauth_redirect";
+    const reg = await (await fetch(as.registration_endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ client_name: clientName, redirect_uris: [redirect], token_endpoint_auth_method: "none" }) })).json();
+    const verifier = b64u(randomBytes(32));
+    const u = new URL(as.authorization_endpoint);
+    Object.entries({ response_type: "code", client_id: reg.client_id, redirect_uri: redirect, code_challenge: b64u(createHash("sha256").update(verifier).digest()), code_challenge_method: "S256", state: "x", resource: `${SERVER}/mcp` }).forEach(([k, v]) => u.searchParams.set(k, v));
+    const res = await fetch(u, { method: "POST", body: new URLSearchParams({ api_key: acct.apiKey, decision: "allow" }), redirect: "manual" });
+    const loc = new URL(res.headers.get("location"));
+    assert.ok(loc.searchParams.get("iss"), "RFC 9207 iss parameter");
+    const tok = await (await fetch(as.token_endpoint, { method: "POST", body: new URLSearchParams({ grant_type: "authorization_code", code: loc.searchParams.get("code"), redirect_uri: redirect, client_id: reg.client_id, code_verifier: verifier, resource: `${SERVER}/mcp` }) })).json();
+    const r = await (await fetch(`${SERVER}/mcp`, { method: "POST", headers: { authorization: `Bearer ${tok.access_token}`, "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }) })).json();
+    return r.result.tools;
+  };
+  const chat = await toolsFor("ChatGPT");
+  const names = chat.map((t) => t.name);
+  for (const n of ["click", "type_text", "press_key", "scroll", "hover", "drag", "navigate", "screenshot", "read_page", "pairing_code"]) assert.ok(names.includes(n), `chat missing ${n}`);
+  for (const n of ["computer", "javascript_tool", "history_search"]) assert.ok(!names.includes(n), `chat should not have ${n}`);
+  for (const t of chat) {
+    for (const h of ["readOnlyHint", "destructiveHint", "openWorldHint"]) assert.equal(typeof t.annotations[h], "boolean", `${t.name}.${h}`);
+    assert.ok(t.title && t.description, t.name);
+    assert.ok(t.name.length <= 64);
+  }
+  assert.equal(chat.find((t) => t.name === "click").annotations.destructiveHint, true);
+  assert.equal(chat.find((t) => t.name === "read_page").annotations.readOnlyHint, true);
+  const agent = (await toolsFor("Claude Code")).map((t) => t.name);
+  assert.ok(agent.includes("computer") && agent.includes("javascript_tool") && !agent.includes("click"));
+});

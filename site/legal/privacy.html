@@ -1,0 +1,41 @@
+<h1>Privacy policy</h1>
+<p class="meta">Last updated November 4, 2026</p>
+<p>Agent Chrome lets AI agents and chat apps use Chrome profiles that you connect. Circo, Inc. ("we") operates the hosted service at agentchrome.dev. The software is open source, so you can check how it handles data in the <a href="https://github.com/ShadowWalker2014/agentchrome">source code</a>. If you run it in local mode or on your own server, none of the data below reaches us.</p>
+
+<h2>What we collect</h2>
+<table>
+<tr><th>Data</th><th>Why</th><th>How long we keep it</th></tr>
+<tr><td>Account ID and a one-way hash of each account key</td><td>To sign you in and authorize connected apps</td><td>Until you delete your account</td></tr>
+<tr><td>Connected browsers: the name you give each profile, the extension version, when it was last online, and the profile's Google account email if you allow Chrome to share it</td><td>To show your browsers and route each agent's actions to the right one</td><td>Until you remove the browser or delete your account</td></tr>
+<tr><td>Connected apps: the app name and redirect address of each app you authorize (for example Claude or ChatGPT), and hashed access and refresh tokens</td><td>To let those apps reach your browsers</td><td>Access tokens 1 hour, refresh tokens up to 90 days, or until you revoke them</td></tr>
+<tr><td>Screenshots and recordings that an agent explicitly saves</td><td>To give the app a download link</td><td>Deleted automatically after 7 days</td></tr>
+<tr><td>Request logs: time, path, status, response time and IP address</td><td>Security, abuse prevention and debugging</td><td>Up to 30 days</td></tr>
+<tr><td>One sign-in cookie</td><td>To keep you signed in on agentchrome.dev</td><td>30 days</td></tr>
+</table>
+
+<h2>What we do not keep</h2>
+<p>When an agent reads a page, takes a screenshot or clicks, the request and its result pass through our server to your browser and back to the app that asked. We do not store page contents, screenshots or typed text, except files an agent explicitly saves as described above. We do not collect passwords, payment details or browsing history. The history tool only works if you turn it on in the extension, and results go only to the app that asked.</p>
+
+<h2>Who receives data</h2>
+<ul>
+<li><b>The apps you connect</b>, such as Claude, ChatGPT or a coding agent, receive what their agent reads from your browser. Their own privacy policies apply to that data.</li>
+<li><b>Cloudflare</b> hosts the service (Workers, Durable Objects, D1, KV and R2) and processes data on our behalf.</li>
+<li>We do not sell personal data, show ads, or use your data to train AI models.</li>
+</ul>
+
+<h2>Your controls</h2>
+<ul>
+<li>Pause any agent, stop all agents or block sites from the extension's toolbar popup.</li>
+<li>Remove a browser with <code>agentchrome revoke &lt;id&gt;</code>, or by pressing Disconnect in the extension.</li>
+<li>Replace your account key with <code>agentchrome rotate-key</code>.</li>
+<li>To delete your account and all data tied to it, email <a href="mailto:privacy@agentchrome.dev">privacy@agentchrome.dev</a> from any address and include your account ID. We delete it within 30 days.</li>
+</ul>
+
+<h2>Security</h2>
+<p>Keys and tokens are stored only as hashes. Connections use HTTPS and secure WebSockets, and each account's browsers are isolated from other accounts. See the <a href="https://github.com/ShadowWalker2014/agentchrome#security">security notes</a>.</p>
+
+<h2>Children</h2>
+<p>Agent Chrome is not meant for anyone under 13, and we do not knowingly collect their data.</p>
+
+<h2>Changes and contact</h2>
+<p>If we change this policy, we update the date above and describe material changes on the GitHub repository. Questions: <a href="mailto:privacy@agentchrome.dev">privacy@agentchrome.dev</a>.</p>

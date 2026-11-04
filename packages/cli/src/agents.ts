@@ -1,7 +1,7 @@
 // Writes the MCP server entry into each coding agent's user-level config.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync, cpSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync, cpSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, relative } from "node:path";
 
@@ -97,25 +97,42 @@ function stripCodexBlock(toml: string): string {
   return out.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
-const codex: AgentDef = {
-  id: "codex",
-  name: "Codex",
-  detect: () => has("codex") || existsSync(dirname(CODEX_CONFIG)),
-  install(t) {
-    const cur = existsSync(CODEX_CONFIG) ? readFileSync(CODEX_CONFIG, "utf8") : "";
-    if (cur) cpSync(CODEX_CONFIG, `${CODEX_CONFIG}.bak-agentchrome`);
-    let block = `\n[mcp_servers.${SERVER_NAME}]\nurl = "${t.url}"\ntool_timeout_sec = 180\n`;
-    if (t.token) block += `\n[mcp_servers.${SERVER_NAME}.http_headers]\nAuthorization = "Bearer ${t.token}"\n`;
-    mkdirSync(dirname(CODEX_CONFIG), { recursive: true });
-    writeFileSync(CODEX_CONFIG, `${stripCodexBlock(cur).trimEnd()}\n${block}`);
-    return CODEX_CONFIG;
-  },
-  uninstall() {
-    if (existsSync(CODEX_CONFIG)) writeFileSync(CODEX_CONFIG, `${stripCodexBlock(readFileSync(CODEX_CONFIG, "utf8")).trimEnd()}\n`);
-    return CODEX_CONFIG;
-  },
-  installed: () => existsSync(CODEX_CONFIG) && readFileSync(CODEX_CONFIG, "utf8").includes(`[mcp_servers.${SERVER_NAME}]`),
-};
+function codexAgent(config: string, id: string, name: string): AgentDef {
+  return {
+    id,
+    name,
+    detect: () => (id === "codex" ? has("codex") : false) || existsSync(dirname(config)),
+    install(t) {
+      const cur = existsSync(config) ? readFileSync(config, "utf8") : "";
+      if (cur) cpSync(config, `${config}.bak-agentchrome`);
+      let block = `\n[mcp_servers.${SERVER_NAME}]\nurl = "${t.url}"\ntool_timeout_sec = 180\n`;
+      if (t.token) block += `\n[mcp_servers.${SERVER_NAME}.http_headers]\nAuthorization = "Bearer ${t.token}"\n`;
+      mkdirSync(dirname(config), { recursive: true });
+      writeFileSync(config, `${stripCodexBlock(cur).trimEnd()}\n${block}`);
+      return config;
+    },
+    uninstall() {
+      if (existsSync(config)) writeFileSync(config, `${stripCodexBlock(readFileSync(config, "utf8")).trimEnd()}\n`);
+      return config;
+    },
+    installed: () => existsSync(config) && readFileSync(config, "utf8").includes(`[mcp_servers.${SERVER_NAME}]`),
+  };
+}
+const codex = codexAgent(CODEX_CONFIG, "codex", "Codex");
+
+/**
+ * Extra config homes, e.g. from a CLI proxy that runs agents with their own settings
+ * (CODEX_HOME=~/.codex-proxy, XDG_CONFIG_HOME=~/.muse-proxy/config, OPENCODE_CONFIG=~/.opencode-proxy/opencode.json).
+ */
+function homeVariants(prefix: string): string[] {
+  try {
+    return readdirSync(H)
+      .filter((d) => d.startsWith(`${prefix}-`) && statSync(join(H, d)).isDirectory())
+      .map((d) => join(H, d));
+  } catch {
+    return [];
+  }
+}
 
 // ---------- Claude Code (CLI) ----------
 const claude: AgentDef = {
@@ -140,27 +157,31 @@ const claude: AgentDef = {
 };
 
 // ---------- Grok (CLI) ----------
-const grok: AgentDef = {
-  id: "grok",
-  name: "Grok",
-  detect: () => has("grok"),
-  install(t) {
-    runQuiet("grok", ["mcp", "remove", SERVER_NAME]);
-    const args = ["mcp", "add", "--scope", "user", "--transport", "http"];
-    if (t.token) args.push("--header", `Authorization: Bearer ${t.token}`);
-    args.push(SERVER_NAME, t.url);
-    run("grok", args);
-    return "~/.grok/config.toml";
-  },
-  uninstall() {
-    runQuiet("grok", ["mcp", "remove", SERVER_NAME]);
-    return "~/.grok/config.toml";
-  },
-  installed() {
-    const p = join(H, ".grok", "config.toml");
-    return existsSync(p) && readFileSync(p, "utf8").includes(SERVER_NAME);
-  },
-};
+function grokAgent(home: string | undefined, id: string, name: string): AgentDef {
+  const env = home ? { ...process.env, GROK_HOME: home } : process.env;
+  const cfg = join(home ?? join(H, ".grok"), "config.toml");
+  const grokRun = (args: string[]) => spawnSync("grok", args, { encoding: "utf8", env });
+  return {
+    id,
+    name,
+    detect: () => has("grok") && (home ? existsSync(home) : true),
+    install(t) {
+      grokRun(["mcp", "remove", SERVER_NAME]);
+      const args = ["mcp", "add", "--scope", "user", "--transport", "http"];
+      if (t.token) args.push("--header", `Authorization: Bearer ${t.token}`);
+      args.push(SERVER_NAME, t.url);
+      const r = grokRun(args);
+      if (r.status !== 0) throw new Error(`grok mcp add failed: ${(r.stderr || r.stdout || "").trim().slice(0, 300)}`);
+      return cfg;
+    },
+    uninstall() {
+      grokRun(["mcp", "remove", SERVER_NAME]);
+      return cfg;
+    },
+    installed: () => existsSync(cfg) && readFileSync(cfg, "utf8").includes(SERVER_NAME),
+  };
+}
+const grok = grokAgent(undefined, "grok", "Grok");
 
 // ---------- Antigravity CLI (agy) + IDE ----------
 const AGY_IDE = join(H, ".gemini", "antigravity", "mcp_config.json");
@@ -197,6 +218,25 @@ const antigravity: AgentDef = {
 };
 
 const MUSE = join(process.env.XDG_CONFIG_HOME ?? join(H, ".config"), "muse", "settings.json");
+
+const variantAgents: AgentDef[] = [
+  ...homeVariants(".grok").map((d) => grokAgent(d, `grok@${d.split("/").pop()}`, `Grok (${d.split("/").pop()})`)),
+  ...homeVariants(".codex")
+    .filter((d) => existsSync(join(d, "config.toml")))
+    .map((d) => codexAgent(join(d, "config.toml"), `codex@${d.split("/").pop()}`, `Codex (${d.split("/").pop()})`)),
+  ...homeVariants(".muse")
+    .map((d) => join(d, "config", "muse", "settings.json"))
+    .filter((f) => existsSync(f))
+    .map((f) =>
+      jsonAgent({ id: `muse@${f.split("/")[3]}`, name: `Muse (${f.split("/")[3]})`, path: f, detect: () => true, entry: (t) => ({ type: "streamable-http", url: t.url, ...auth(t) }) }),
+    ),
+  ...homeVariants(".opencode")
+    .map((d) => join(d, "opencode.json"))
+    .filter((f) => existsSync(f))
+    .map((f) =>
+      jsonAgent({ id: `opencode@${f.split("/")[3]}`, name: `opencode (${f.split("/")[3]})`, path: f, key: "mcp", detect: () => true, entry: (t) => ({ type: "remote", url: t.url, enabled: true, ...auth(t) }) }),
+    ),
+];
 
 export const AGENTS: AgentDef[] = [
   claude,
@@ -239,6 +279,7 @@ export const AGENTS: AgentDef[] = [
     detect: () => existsSync(join(H, ".codeium", "windsurf")),
     entry: (t) => ({ serverUrl: t.url, ...auth(t) }),
   }),
+  ...variantAgents,
 ];
 
 // ---------- skill: one canonical copy, symlinked into every agent ----------
@@ -308,6 +349,9 @@ export function removeLegacy(): string[] {
   }
   return removed;
 }
+
+// Proxied Codex homes (e.g. ~/.codex-proxy) read skills from their own folder.
+for (const d of homeVariants(".codex")) SKILL_DIRS.push({ agent: `Codex (${d.split("/").pop()})`, dir: join(d, "skills") });
 
 export function installSkill(skillMd: string): string[] {
   const canonical = join(CANONICAL_SKILLS, SKILL_NAME);

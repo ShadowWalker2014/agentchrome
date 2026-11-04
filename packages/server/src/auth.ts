@@ -23,6 +23,8 @@ export const normalizePairCode = (c: string) => c.toUpperCase().replace(/[^A-Z0-
 export interface Principal {
   accountId: string;
   via: "key" | "oauth" | "device";
+  /** OAuth client name, e.g. "Claude" or "ChatGPT". */
+  clientName?: string;
   keyId?: string;
   deviceId?: string;
 }

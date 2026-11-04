@@ -11,7 +11,16 @@ export interface ToolDef {
   server?: boolean;
   /** Per-call timeout in ms when relayed to the browser. */
   timeoutMs?: number;
+  /**
+   * Which tool set it belongs to. "agent": coding agents (Claude in Chrome parity, incl. computer/javascript_tool).
+   * "directory": chat apps listed in the Claude and ChatGPT directories (one tool per action). Unset: both.
+   */
+  profile?: "agent" | "directory";
+  /** Directory tools run as an existing tool: map their arguments onto it. */
+  via?: { tool: string; map: (a: Record<string, any>) => Record<string, unknown> };
 }
+
+export type Profile = "agent" | "directory";
 
 const browser = {
   type: "string",
@@ -388,13 +397,90 @@ export const TOOLS: ToolDef[] = [
   },
 ];
 
+const target = {
+  ref: { type: "string", description: "Element ref from read_page or find, e.g. 'ref_12'. Preferred." },
+  coordinate: { ...coord, description: "[x, y] in the pixels of the latest screenshot, when there is no ref." },
+};
+const pick = (a: Record<string, any>, ...keys: string[]) => Object.fromEntries(keys.filter((k) => a[k] !== undefined).map((k) => [k, a[k]]));
+
+// One tool per action for chat-app directories (Claude, ChatGPT): no generic executor, honest side-effect hints.
+TOOLS.push(
+  {
+    name: "click",
+    title: "Click",
+    profile: "directory",
+    description: "Click an element (by ref) or a point (by coordinate). Clicking can submit forms, buy things or send messages, so ask the user before clicks with irreversible effects.",
+    inputSchema: obj({ ...target, button: { type: "string", enum: ["left", "right", "middle"] }, clicks: { type: "number", enum: [1, 2, 3], description: "2 for double click, 3 for triple click." }, tabId }),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "ref", "coordinate", "tabId", "browser"), action: a.button === "right" ? "right_click" : a.button === "middle" ? "middle_click" : a.clicks === 2 ? "double_click" : a.clicks === 3 ? "triple_click" : "left_click" }) },
+  },
+  {
+    name: "type_text",
+    title: "Type text",
+    profile: "directory",
+    description: "Type text into the focused field, or into the field given by ref (it is clicked first). Does not press Enter; use press_key for that.",
+    inputSchema: obj({ text: { type: "string" }, ref: target.ref, tabId }, ["text"]),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "ref", "tabId", "browser"), action: "type", text: a.text }) },
+  },
+  {
+    name: "press_key",
+    title: "Press keys",
+    profile: "directory",
+    description: "Press a key or shortcut, e.g. 'Enter', 'Escape', 'Tab', 'cmd+a'. Space-separate several keys. Enter can submit forms.",
+    inputSchema: obj({ keys: { type: "string" }, repeat: { type: "number", minimum: 1, maximum: 20 }, tabId }, ["keys"]),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "repeat", "tabId", "browser"), action: "key", text: a.keys }) },
+  },
+  {
+    name: "scroll",
+    title: "Scroll",
+    profile: "directory",
+    description: "Scroll the page, or the element at ref/coordinate, in a direction. Use ref with scrollIntoView=true to bring an element into view.",
+    inputSchema: obj({ direction: { type: "string", enum: ["up", "down", "left", "right"] }, amount: { type: "number", minimum: 1, maximum: 20, description: "Default 3." }, ...target, scrollIntoView: { type: "boolean" }, tabId }),
+    via: { tool: "computer", map: (a) => (a.scrollIntoView ? { ...pick(a, "ref", "tabId", "browser"), action: "scroll_to" } : { ...pick(a, "ref", "coordinate", "tabId", "browser"), action: "scroll", scroll_direction: a.direction ?? "down", scroll_amount: a.amount ?? 3 }) },
+  },
+  {
+    name: "hover",
+    title: "Hover",
+    profile: "directory",
+    description: "Move the pointer over an element or point, e.g. to open a menu or show a tooltip. Does not click.",
+    inputSchema: obj({ ...target, tabId }),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "ref", "coordinate", "tabId", "browser"), action: "hover" }) },
+  },
+  {
+    name: "drag",
+    title: "Drag and drop",
+    profile: "directory",
+    description: "Drag from one element or point to another. Works for HTML5 drag and drop and for sliders.",
+    inputSchema: obj({ fromRef: { type: "string" }, from: { ...coord }, toRef: { type: "string" }, to: { ...coord }, tabId }),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "tabId", "browser"), action: "left_click_drag", start_ref: a.fromRef, start_coordinate: a.from, ref: a.toRef, coordinate: a.to }) },
+  },
+  {
+    name: "wait",
+    title: "Wait",
+    profile: "directory",
+    description: "Wait a number of seconds (max 30), e.g. for an animation. Prefer wait_for when waiting for content.",
+    inputSchema: obj({ seconds: { type: "number", minimum: 0, maximum: 30 }, tabId }, ["seconds"]),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "tabId", "browser"), action: "wait", duration: a.seconds }) },
+  },
+  {
+    name: "zoom",
+    title: "Zoom into a region",
+    profile: "directory",
+    description: "Take a full-resolution screenshot of a region [x0, y0, x1, y1] of the latest screenshot, to read small text.",
+    inputSchema: obj({ region: { type: "array", items: { type: "number" }, minItems: 4, maxItems: 4 }, tabId }, ["region"]),
+    via: { tool: "computer", map: (a) => ({ ...pick(a, "region", "tabId", "browser"), action: "zoom" }) },
+  },
+);
+for (const t of TOOLS) if (t.name === "computer" || t.name === "javascript_tool" || t.name === "history_search") t.profile = "agent";
+
 // Hints for clients that ask before running tools with side effects (ChatGPT, Claude). Every tool acts on the open web.
-const READ_ONLY = new Set(["list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search"]);
+const READ_ONLY = new Set(["list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "scroll", "hover", "wait", "zoom"]);
+// Actions whose effects may not be undoable: closing tabs or groups, clicks and keys that can submit, scripts, uploads.
+const DESTRUCTIVE = new Set(["tabs_close", "tab_groups", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
 for (const t of TOOLS) {
   t.annotations = {
     title: t.title,
     readOnlyHint: READ_ONLY.has(t.name),
-    destructiveHint: t.name === "tabs_close" || t.name === "tab_groups",
+    destructiveHint: DESTRUCTIVE.has(t.name),
     idempotentHint: READ_ONLY.has(t.name),
     openWorldHint: !t.server,
   };
@@ -402,12 +488,17 @@ for (const t of TOOLS) {
 
 export const TOOL_BY_NAME = new Map(TOOLS.map((t) => [t.name, t]));
 
-export function publicTools() {
-  return TOOLS.map(({ name, title, description, inputSchema, annotations }) => ({
+export const inProfile = (t: ToolDef, profile: Profile) => !t.profile || t.profile === profile;
+
+export function publicTools(profile: Profile = "agent") {
+  return TOOLS.filter((t) => inProfile(t, profile)).map(({ name, title, description, inputSchema, annotations }) => ({
     name,
     title,
     description,
     inputSchema,
     ...(annotations ? { annotations } : {}),
+    // Every tool needs the signed-in user (OpenAI per-tool auth declaration).
+    securitySchemes: [{ type: "oauth2", scopes: ["browser"] }],
+    _meta: { securitySchemes: [{ type: "oauth2", scopes: ["browser"] }] },
   }));
 }

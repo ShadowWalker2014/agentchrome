@@ -20,6 +20,13 @@ const OPENAI = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" widt
 const fill = (t) => t.replaceAll("__SERVER__", server).replace("__AGENT_CHIPS__", chips).replace("__ICON_CLAUDE__", icons.claude).replace("__ICON_OPENAI__", OPENAI);
 for (const f of ["index.html", "install.sh"]) writeFileSync(join(pub, f), fill(readFileSync(join(root, "site", f), "utf8")));
 cpSync(join(root, "docs/media"), join(pub, "media"), { recursive: true });
+// Privacy, terms and support pages share one layout.
+const layout = readFileSync(join(root, "site/legal/_layout.html"), "utf8");
+for (const [file, title] of [["privacy", "Privacy policy"], ["terms", "Terms of service"], ["support", "Support"]]) {
+  const body = readFileSync(join(root, "site/legal", `${file}.html`), "utf8");
+  mkdirSync(join(pub, file), { recursive: true });
+  writeFileSync(join(pub, file, "index.html"), layout.replace("__TITLE__", title).replace("__BODY__", body));
+}
 cpSync(join(pub, "install.sh"), join(pub, "install"));
 cpSync(join(root, "packages/cli/dist/cli.mjs"), join(pub, "cli.mjs"));
 cpSync(join(root, "packages/extension/agentchrome-extension.zip"), join(pub, "agentchrome-extension.zip"));

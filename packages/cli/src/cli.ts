@@ -155,6 +155,10 @@ async function cmdSetup(flags: Record<string, string | boolean>) {
       const me = await api(cfg, "/api/me").catch((e) => fail(`That key does not work on ${server}: ${e.message}`));
       cfg.accountId = me.accountId;
       ok(`Signed in to ${server}`);
+    } else if (cfg && cfg.mode !== "local" && cfg.server !== server && (await api({ server, apiKey: cfg.apiKey }, "/api/me").catch(() => null))) {
+      // Same account on a new address (for example after a domain move): keep it.
+      cfg = { ...cfg, server };
+      ok(`Moved your account to ${server}`);
     } else if (cfg && cfg.server === server && cfg.mode !== "local") {
       const me = await api(cfg, "/api/me").catch(() => null);
       if (!me) fail(`Your saved key no longer works on ${server}. Run setup with --key, or delete ${CONFIG}.`);

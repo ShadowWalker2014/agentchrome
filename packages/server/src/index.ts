@@ -80,7 +80,7 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
       lines.length === 0
         ? "No Chrome profiles are paired yet. Install the extension, then run `agentchrome pair` and enter the code in the extension popup."
         : JSON.stringify(lines, null, 2);
-    return { content: [{ type: "text", text }], structuredContent: { browsers: lines } };
+    return { content: [{ type: "text", text }] };
   }
   if (name === "pairing_code") {
     const { code, expiresAt } = await createPairCode(env, accountId);
@@ -92,7 +92,7 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
       `3. Click the Agent Chrome icon in the toolbar, paste ${code} and press Connect.`,
       "Then call list_browsers to confirm the profile is online.",
     ].join("\n");
-    return { content: [{ type: "text", text }], structuredContent: { code, expiresAt: new Date(expiresAt).toISOString() } };
+    return { content: [{ type: "text", text }] };
   }
   if (name === "select_browser") {
     const sel = String(args.browser ?? "");
@@ -109,6 +109,12 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
   throw new Error(`Unknown server tool ${name}`);
 }
 
+/** Chat apps from the Claude and ChatGPT directories get one tool per action; coding agents get Claude-in-Chrome parity. */
+function directoryProfile(p: Principal) {
+  if (p.via !== "oauth" || !p.clientName) return false;
+  return /^(claude|claude\.ai|chatgpt|openai|chatgpt connector)$/i.test(p.clientName.trim()) || /chatgpt|openai/i.test(p.clientName);
+}
+
 const mcpApi: ExportedHandler<Env> = {
   async fetch(request, env, ctx) {
     const props = (ctx as any).props as Principal;
@@ -119,8 +125,14 @@ const mcpApi: ExportedHandler<Env> = {
       serverName: "agentchrome",
       serverVersion: VERSION,
       instructions: SERVER_INSTRUCTIONS,
+      profile: directoryProfile(props) ? "directory" : "agent",
       async callTool(name, args, session) {
-        const def = TOOL_BY_NAME.get(name)!;
+        let def = TOOL_BY_NAME.get(name)!;
+        if (def.via) {
+          args = def.via.map(args);
+          name = def.via.tool;
+          def = TOOL_BY_NAME.get(name)!;
+        }
         if (def.server) return serverTool(env, props.accountId, name, args, session, new URL(request.url).origin);
         return hubFor(env, props.accountId).call(name, args, session, def.timeoutMs ?? 45_000);
       },
@@ -209,7 +221,7 @@ async function handleAuthorize(request: Request, env: Env): Promise<Response> {
         userId: accountId,
         metadata: { client: clientName },
         scope: oauthReq.scope,
-        props: { accountId, via: "oauth" } satisfies Principal,
+        props: { accountId, via: "oauth", clientName } satisfies Principal,
       });
       return Response.redirect(redirectTo, 302);
     },
@@ -303,6 +315,11 @@ const app: ExportedHandler<Env> = {
     }
     if (path === "/ws") return handleWebSocket(request, env);
     if (path === "/health") return json({ ok: true, version: VERSION });
+    if (path === "/.well-known/openai-apps-challenge") {
+      // OpenAI domain verification: the plain token only.
+      const token = env.OPENAI_APPS_CHALLENGE ?? (await env.OAUTH_KV.get("config:openai_apps_challenge"));
+      return token ? new Response(token.trim(), { headers: { "content-type": "text/plain" } }) : err(404, "not configured");
+    }
     if (path === "/.well-known/oauth-protected-resource") {
       // Some clients look for resource metadata at the root instead of under /mcp.
       return json(
@@ -400,6 +417,8 @@ function providerFor(origin: string) {
       authorizeEndpoint: "/authorize",
       tokenEndpoint: "/token",
       clientRegistrationEndpoint: "/register",
+      // CIMD: ChatGPT prefers it and Anthropic recommends it for directory traffic (no new client per connection).
+      clientIdMetadataDocumentEnabled: true,
       scopesSupported: ["browser"],
       accessTokenTTL: 3600,
       refreshTokenTTL: 90 * 24 * 3600,

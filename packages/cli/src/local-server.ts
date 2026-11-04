@@ -111,7 +111,12 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
   }
 
   async function callTool(name: string, args: Record<string, unknown>, session: SessionInfo): Promise<CallToolResult> {
-    const def = TOOL_BY_NAME.get(name)!;
+    let def = TOOL_BY_NAME.get(name)!;
+    if (def.via) {
+      args = def.via.map(args);
+      name = def.via.tool;
+      def = TOOL_BY_NAME.get(name)!;
+    }
     if (name === "list_browsers") {
       const s = state();
       const list = s.devices.map((d) => ({ id: d.id, name: conns.get(d.id)?.name ?? d.name, email: conns.get(d.id)?.email, online: conns.has(d.id) }));
