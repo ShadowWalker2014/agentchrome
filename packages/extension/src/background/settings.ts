@@ -30,9 +30,18 @@ export async function setSettings(patch: Partial<Settings>) {
   return s;
 }
 
+// The hosted server moved from its workers.dev address to agentchrome.dev; same Worker, so device tokens stay valid.
+const MOVED: Record<string, string> = { "https://agent-chrome-mcp.circo.workers.dev": "https://agentchrome.dev" };
+
 export async function getConnection(): Promise<Connection> {
   const { connection } = await chrome.storage.local.get("connection");
-  return (connection as Connection) ?? {};
+  const c = (connection as Connection) ?? {};
+  const to = c.server && MOVED[c.server.replace(/\/+$/, "")];
+  if (to) {
+    c.server = to;
+    await chrome.storage.local.set({ connection: c });
+  }
+  return c;
 }
 
 export async function setConnection(c: Connection) {
