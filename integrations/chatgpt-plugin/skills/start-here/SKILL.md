@@ -1,6 +1,6 @@
 ---
 name: start-here
-description: "How Agent Chrome works in ChatGPT: connecting a browser, the session tab group, reading before acting, and asking before irreversible actions."
+description: "How Agent Chrome works: connecting a browser, the session tab group, reading before acting, and asking before irreversible actions."
 ---
 
 # Start here

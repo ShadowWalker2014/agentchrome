@@ -1,5 +1,5 @@
 <h1>Privacy policy</h1>
-<p class="meta">Last updated November 4, 2026</p>
+<p class="meta">Last updated November 6, 2026</p>
 <p>Agent Chrome lets AI agents and chat apps use Chrome profiles that you connect. Circo, Inc. ("we") operates the hosted service at agentchrome.dev. The software is open source, so you can check how it handles data in the <a href="https://github.com/ShadowWalker2014/agentchrome">source code</a>. If you run it in local mode or on your own server, none of the data below reaches us.</p>
 
 <h2>What we collect</h2>
@@ -12,6 +12,23 @@
 <tr><td>Request logs: time, path, status, response time and IP address</td><td>Security, abuse prevention and debugging</td><td>Up to 30 days</td></tr>
 <tr><td>One sign-in cookie</td><td>To keep you signed in on agentchrome.dev</td><td>30 days</td></tr>
 </table>
+
+<h2>What the tools return to the app you connect</h2>
+<p>Each tool returns only the data below, and only to the app that called it. Tool results never include your account key, tokens or the Google account email of a browser.</p>
+<table>
+<tr><th>Tools</th><th>Data returned</th></tr>
+<tr><td>list_browsers, select_browser</td><td>Each connected browser's ID, the name you gave it, whether it is online, the extension version and when it was last online</td></tr>
+<tr><td>pairing_code</td><td>A single-use pairing code, its expiry time and setup steps</td></tr>
+<tr><td>tabs_context, tabs_create, tabs_select, navigate, list_tab_groups, update_tab_group</td><td>Tab IDs, page titles and URLs of the session's tabs; with the option to list all tabs or groups, the titles, colors, page titles and URLs of the other tabs and tab groups in that Chrome profile</td></tr>
+<tr><td>get_page_text, read_page, find</td><td>The text of the page, its accessibility tree (element roles, names and values, including what is typed into form fields) and element positions</td></tr>
+<tr><td>screenshot, zoom, record, gif_creator</td><td>Images and video of the tab, which show whatever the page shows</td></tr>
+<tr><td>read_console_messages</td><td>Console messages and script errors the page logged</td></tr>
+<tr><td>read_network_requests</td><td>The URL, method, status, type and timing of the page's requests, and, only when asked, response bodies of up to 10 KB. Request headers and cookies are not returned</td></tr>
+<tr><td>history_search (off unless you turn it on in the extension)</td><td>Titles, URLs and visit times of matching browsing history entries</td></tr>
+<tr><td>handle_dialog</td><td>The text of the alert, confirm or leave-page dialog</td></tr>
+<tr><td>click, type_text, press_key, form_input, scroll, hover, drag, file_upload, wait, wait_for, tabs_close, close_tab_group</td><td>Whether the action worked, the element or tab it acted on, and the page URL afterwards</td></tr>
+</table>
+<p>These results can contain personal data that is on the pages you open, such as your name, email address or messages on a site you are signed in to. The app decides what to read, and its own privacy policy covers what it does with the result.</p>
 
 <h2>What we do not keep</h2>
 <p>When an agent reads a page, takes a screenshot or clicks, the request and its result pass through our server to your browser and back to the app that asked. We do not store page contents, screenshots or typed text, except files an agent explicitly saves as described above. We do not collect passwords, payment details or browsing history. The history tool only works if you turn it on in the extension, and results go only to the app that asked.</p>

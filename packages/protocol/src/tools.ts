@@ -506,7 +506,8 @@ TOOLS.push(
 for (const t of TOOLS) if (["computer", "javascript_tool", "history_search", "tab_groups"].includes(t.name)) t.profile = "agent";
 
 // Hints for clients that ask before running tools with side effects (ChatGPT, Claude). Every tool acts on the open web.
-const READ_ONLY = new Set(["list_tab_groups", "list_browsers", "tabs_context", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "scroll", "hover", "wait", "zoom"]);
+// Not read-only: tabs_context can open a tab and renames the group; scroll and hover can load content or open menus.
+const READ_ONLY = new Set(["list_tab_groups", "list_browsers", "screenshot", "read_page", "find", "get_page_text", "read_console_messages", "read_network_requests", "wait_for", "history_search", "wait", "zoom"]);
 // Actions whose effects may not be undoable: closing tabs or groups, clicks and keys that can submit, scripts, uploads.
 const DESTRUCTIVE = new Set(["handle_dialog", "tabs_close", "tab_groups", "close_tab_group", "click", "press_key", "computer", "javascript_tool", "file_upload", "upload_image"]);
 for (const t of TOOLS) {
@@ -530,6 +531,11 @@ export function publicTools(profile: Profile = "agent") {
       const { save: _save, ...properties } = (inputSchema as any).properties ?? {};
       inputSchema = { ...(inputSchema as any), properties };
       description = description.replace(/ Set save=true[^.]*\./, "");
+    }
+    // Clearing the capture buffer is a write, so read-only log tools drop it for chat apps.
+    if (profile === "directory" && (name === "read_console_messages" || name === "read_network_requests")) {
+      const { clear: _clear, ...properties } = (inputSchema as any).properties ?? {};
+      inputSchema = { ...(inputSchema as any), properties };
     }
     return {
     name,

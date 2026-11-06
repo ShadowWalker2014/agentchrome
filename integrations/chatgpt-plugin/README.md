@@ -1,6 +1,6 @@
-# Agent Chrome for ChatGPT
+# Agent Chrome plugin
 
-Agent Chrome lets ChatGPT use the Chrome browser on your computer, in the profiles you are already signed in to. It works in its own tab group, so its tabs stay apart from yours, and the page shows a blue border, a status bar with a Stop button and a visible cursor while it works.
+Agent Chrome lets the assistant use the Chrome browser on your computer, in the profiles you are already signed in to. It works in its own tab group, so its tabs stay apart from yours, and the page shows a blue border, a status bar with a Stop button and a visible cursor while it works.
 
 ## What it connects to
 
@@ -16,8 +16,10 @@ The plugin connects to one remote server, `https://agentchrome.dev/mcp`, run by 
 - Take screenshots, including long full-page images, and record MP4 or GIF clips.
 - Use several Chrome profiles, such as Work and Personal.
 
-ChatGPT asks you before actions that can't be undone, such as buying, sending or deleting. It never moves money.
+The assistant asks you before actions that can't be undone, such as buying, sending or deleting. It never moves money.
 
 ## Requirements
 
-Desktop Chrome 120 or newer with the Agent Chrome extension: https://agentchrome.dev/docs/install. Docs: https://agentchrome.dev/docs/claude-and-chatgpt. Support: support@agentchrome.dev. Source (MIT): https://github.com/ShadowWalker2014/agentchrome.
+Desktop Chrome 120 or newer with the Agent Chrome extension: https://agentchrome.dev/docs/install. Docs: https://agentchrome.dev/docs. Support: support@agentchrome.dev. Source (MIT): https://github.com/ShadowWalker2014/agentchrome.
+
+Agent Chrome is an independent open-source project by Circo, Inc. It is not affiliated with, endorsed by or sponsored by Google. Chrome is a trademark of Google LLC.

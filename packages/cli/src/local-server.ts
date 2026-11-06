@@ -119,7 +119,7 @@ export function startLocalServer(port = LOCAL_PORT, log = console.log) {
     }
     if (name === "list_browsers") {
       const s = state();
-      const list = s.devices.map((d) => ({ id: d.id, name: conns.get(d.id)?.name ?? d.name, email: conns.get(d.id)?.email, online: conns.has(d.id) }));
+      const list = s.devices.map((d) => ({ id: d.id, name: conns.get(d.id)?.name ?? d.name, online: conns.has(d.id) }));
       return { content: [{ type: "text", text: list.length ? JSON.stringify(list, null, 2) : "No browsers paired. Run `agentchrome pair --local`." }] };
     }
     if (name === "pairing_code") {

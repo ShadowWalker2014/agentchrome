@@ -70,7 +70,6 @@ async function serverTool(env: Env, accountId: string, name: string, args: Recor
       return {
         id: d.id,
         name: live?.name ?? d.name,
-        email: live?.email ?? d.email,
         online: onlineIds.has(d.id),
         extensionVersion: live?.version ?? d.version,
         lastSeen: d.last_seen_at ? new Date(d.last_seen_at).toISOString() : null,
@@ -128,6 +127,7 @@ const mcpApi: ExportedHandler<Env> = {
       profile: directoryProfile(props) ? "directory" : "agent",
       async callTool(name, args, session) {
         if (name === "screenshot" && directoryProfile(props)) args = { ...args, save: false };
+        if ((name === "read_console_messages" || name === "read_network_requests") && directoryProfile(props)) args = { ...args, clear: false };
         let def = TOOL_BY_NAME.get(name)!;
         if (def.via) {
           args = def.via.map(args);
