@@ -43,3 +43,5 @@ body.welcome{min-height:100vh;font-size:14.5px;background:var(--bg2);overflow-x:
 @media (max-width:620px){.pairrow{flex-wrap:wrap}.pairrow .code{width:100%}.tips{grid-template-columns:1fr}.intro h1{font-size:28px}}
 .cmdline.prompt{height:auto;min-height:48px;padding:8px 6px 8px 16px}
 .cmdline.prompt span:first-child{white-space:normal;line-height:1.4}
+.codehint{margin:14px 0 6px}
+.localserver{width:100%;height:40px;margin-top:6px}

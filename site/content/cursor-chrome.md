@@ -24,14 +24,14 @@ It needs Node.js 18 or newer and Chrome 120 or newer. When it finds Cursor (the 
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json`.
 2. Adds `agentchrome` to `~/.cursor/mcp.json`, after saving `mcp.json.bak-agentchrome`.
 3. Links the `agentchrome` skill into `~/.cursor/skills`.
-4. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+4. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Cursor only, run `agentchrome install cursor`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Press **Sign in to connect** in the popup, or paste the pairing code.
 
 ## Manual configuration

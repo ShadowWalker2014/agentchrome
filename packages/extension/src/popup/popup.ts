@@ -140,47 +140,66 @@ const showLocal = (on: boolean) => {
 $("toLocal").onclick = () => showLocal(true);
 $("toCloud").onclick = () => showLocal(false);
 
-const codeInput = $<HTMLInputElement>("code");
-codeInput.addEventListener("input", () => {
-  const pos = codeInput.selectionStart ?? codeInput.value.length;
-  const before = codeInput.value.length;
-  codeInput.value = formatCode(codeInput.value);
-  const delta = codeInput.value.length - before;
-  codeInput.setSelectionRange(pos + delta, pos + delta);
-  $("localError").hidden = true;
-  codeInput.classList.toggle("complete", codeInput.value.length === 11);
-});
+function bindCode(input: HTMLInputElement, errorId: string) {
+  input.addEventListener("input", () => {
+    const pos = input.selectionStart ?? input.value.length;
+    const before = input.value.length;
+    input.value = formatCode(input.value);
+    const delta = input.value.length - before;
+    input.setSelectionRange(pos + delta, pos + delta);
+    $(errorId).hidden = true;
+    input.classList.toggle("complete", input.value.length === 11);
+  });
+}
 
-$("localView").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = $<HTMLButtonElement>("pair");
-  const code = formatCode(codeInput.value);
-  if (code.length !== 11) {
-    showError("localError", "Pairing codes have 10 characters, like ABCDE-FGHJK.");
-    codeInput.focus();
-    return;
-  }
-  $("localError").hidden = true;
-  btn.disabled = true;
-  btn.classList.add("loading");
-  btn.textContent = "Connecting";
-  try {
-    const r = await send<any>({
-      type: "acm:pair",
-      server: $<HTMLInputElement>("server").value.trim(),
-      code,
-      name: $<HTMLInputElement>("pnameLocal").value.trim() || "Chrome",
-    });
-    if (r?.error) throw new Error(r.error);
-    toast("Connected");
-  } catch (err) {
-    showError("localError", String((err as Error).message ?? err).replace(/^Error: /, ""));
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove("loading");
-    btn.textContent = "Connect";
-    render();
-  }
+/** Pairs with a code from `agentchrome setup` / `agentchrome pair`, against the cloud server or a local one. */
+function bindPairForm(opts: { form: string; input: HTMLInputElement; button: string; error: string; label: string; server: () => string; name: () => string }) {
+  bindCode(opts.input, opts.error);
+  $(opts.form).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $<HTMLButtonElement>(opts.button);
+    const code = formatCode(opts.input.value);
+    if (code.length !== 11) {
+      showError(opts.error, "Pairing codes have 10 characters, like ABCDE-FGHJK.");
+      opts.input.focus();
+      return;
+    }
+    $(opts.error).hidden = true;
+    btn.disabled = true;
+    btn.classList.add("loading");
+    btn.textContent = "Connecting";
+    try {
+      const r = await send<any>({ type: "acm:pair", server: opts.server(), code, name: opts.name() || "Chrome" });
+      if (r?.error) throw new Error(r.error);
+      toast("Connected");
+    } catch (err) {
+      showError(opts.error, String((err as Error).message ?? err).replace(/^Error: /, ""));
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove("loading");
+      btn.textContent = opts.label;
+      render();
+    }
+  });
+}
+
+bindPairForm({
+  form: "codeForm",
+  input: $<HTMLInputElement>("cloudCode"),
+  button: "cloudPair",
+  error: "codeError",
+  label: "Connect with code",
+  server: () => __DEFAULT_SERVER__,
+  name: () => $<HTMLInputElement>("pname").value.trim(),
+});
+bindPairForm({
+  form: "localView",
+  input: $<HTMLInputElement>("code"),
+  button: "pair",
+  error: "localError",
+  label: "Connect",
+  server: () => $<HTMLInputElement>("server").value.trim(),
+  name: () => $<HTMLInputElement>("pnameLocal").value.trim(),
 });
 
 const nameInput = $<HTMLInputElement>("name");

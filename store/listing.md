@@ -2,8 +2,10 @@
 
 ## Store listing
 
+The Web Store rejected 0.1.1 on 2026-11-06 for keyword spam (violation "Yellow Argon") because the description listed eight agent names. Do not list agent or product names in the summary or description. Agent logos in the screenshots (screenshot-4-agents.png) stay; Kai approved them.
+
 - **Name:** Agent Chrome
-- **Summary (132 max):** Let AI agents like Claude Code, Codex and Gemini CLI use your real, signed-in Chrome, in their own tab group.
+- **Summary (132 max):** Let your AI coding agent use your real, signed-in Chrome. It works in its own tab group while you watch.
 - **Category:** Developer Tools
 - **Language:** English
 - **Homepage:** https://agentchrome.dev
@@ -12,12 +14,12 @@
 
 ### Description
 
-Agent Chrome lets your AI coding agent use the Chrome you already have open, signed in to your accounts. Ask Claude Code, Codex, Gemini CLI, Cursor, Antigravity, Grok, opencode or Muse to check a dashboard, test your web app behind a login, fill in a form or reproduce a bug, and it does it in your browser.
+Agent Chrome lets your AI coding agent use the Chrome you already have open, signed in to your accounts. Ask your agent to check a dashboard, test your web app behind a login, fill in a form or reproduce a bug, and it does it in your browser. It works with any agent that supports the Model Context Protocol (MCP).
 
 How it works
-Agent Chrome is a small extension plus an MCP server. Your agent connects to the server (hosted at agentchrome.dev, or fully local on your computer), and the server passes each step to this extension. One command sets up every agent on your computer:
+Agent Chrome is a small extension plus an MCP server. Your agent connects to the server (hosted at agentchrome.dev, or fully local on your computer), and the server passes each step to this extension. One command sets up the agents on your computer:
 curl -fsSL https://agentchrome.dev/install | sh
-You can also add https://agentchrome.dev/mcp as a connector in Claude or ChatGPT.
+You can also add https://agentchrome.dev/mcp as a custom connector in any AI chat app that supports MCP.
 
 You stay in control
 - Each agent works in its own named, colored tab group, apart from your tabs.
@@ -41,7 +43,7 @@ Made by Circo, Inc.
 ## Privacy practices
 
 ### Single purpose
-Agent Chrome lets an AI agent that the user has connected (such as Claude Code or Codex) operate the user's own Chrome browser: open and read pages and act on them in a separate tab group, while the user watches and can stop it.
+Agent Chrome lets an AI agent that the user has connected operate the user's own Chrome browser: open and read pages and act on them in a separate tab group, while the user watches and can stop it.
 
 ### Permission justifications
 - **debugger:** The agent's clicks, typing, key presses, scrolling, drag and drop, screenshots, dialog handling, file uploads and console/network reading are done through the Chrome DevTools Protocol on the tabs the agent works in. This is the only way to send real input events and capture the page the way a person sees it.

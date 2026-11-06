@@ -24,14 +24,14 @@ It needs Node.js 18 or newer and Chrome 120 or newer. The installer:
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json`.
 2. Adds `agentchrome` under `mcpServers` in `~/.gemini/settings.json`, after saving `settings.json.bak-agentchrome`.
 3. Links the `agentchrome` skill into `~/.gemini/skills`.
-4. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+4. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Gemini CLI only, run `agentchrome install gemini`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Click the Agent Chrome icon and press **Sign in to connect**, or paste the pairing code.
 
 ## Manual configuration

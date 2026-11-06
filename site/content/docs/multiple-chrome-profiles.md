@@ -14,7 +14,7 @@ Load the extension in each Chrome profile and pair each one with its own code. E
 ## Add a profile
 
 1. Switch to the Chrome profile you want to add (Work, Personal, a client's).
-2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose `~/.agentchrome/extension`. Run `agentchrome extension --path` to print the path.
+2. Open `chrome://extensions`, turn on **Developer mode**, and drag the **Agent Chrome** folder from Documents onto the page (or click **Load unpacked** and choose it). Run `agentchrome extension --path` to print the path.
 3. Get a new code in your terminal:
 
 ```sh

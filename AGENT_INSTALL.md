@@ -32,7 +32,7 @@ The installer does all of this without prompts:
 - It creates the user's account and saves the key in `~/.config/agentchrome/config.json` with `chmod 600`.
 - It adds the `agentchrome` MCP server to every agent it detects, at user level. It backs up each file it edits as `<file>.bak-agentchrome`.
 - It writes the skill to `~/.agents/skills/agentchrome/SKILL.md` and symlinks it into each agent's skills folder.
-- It unpacks the Chrome extension to `~/.agentchrome/extension`.
+- It unpacks the Chrome extension to a visible **Agent Chrome** folder in Documents (`~/Documents/Agent Chrome` on macOS and Linux, `Documents\Agent Chrome` on Windows). If that folder is taken or blocked, it uses `~/Agent Chrome`. `agentchrome extension --path` prints the real path.
 - It prints a **pairing code**, such as `ABCDE-FGHJK`, which is valid for 15 minutes.
 
 If `~/.local/bin` is not on `PATH`, call the CLI as `~/.local/bin/agentchrome` or add it to the user's shell profile.
@@ -44,7 +44,7 @@ To limit the install to some agents, run this after setup: `agentchrome install 
 You can't do this step yourself, because Chrome only lets a person install extensions. Tell the user exactly this, with the path and code filled in:
 
 > 1. Open **chrome://extensions** in Chrome and turn on **Developer mode** (top right).
-> 2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+> 2. Drag the **Agent Chrome** folder from your Documents folder onto that page, or click **Load unpacked** and choose it (`~/Documents/Agent Chrome`). Keep the folder there.
 > 3. Click the puzzle-piece icon, pin **Agent Chrome**, open it, paste the code **ABCDE-FGHJK** and press **Connect**.
 
 If the code expired, run `agentchrome pair` for a new one. Each extra Chrome profile needs the same three steps, with a fresh code from `agentchrome pair`.

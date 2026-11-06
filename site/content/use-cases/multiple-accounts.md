@@ -24,7 +24,7 @@ Chrome profiles solve this already. Each profile keeps its own cookies and login
 Do this once per Chrome profile:
 
 1. Switch to the profile in Chrome.
-2. Open `chrome://extensions`, turn on Developer mode, click Load unpacked and choose `~/.agentchrome/extension`. The command `agentchrome extension --path` prints the path.
+2. Open `chrome://extensions`, turn on Developer mode, drag in the Agent Chrome folder from Documents. The command `agentchrome extension --path` prints the path.
 3. Run `agentchrome pair` in your terminal for a new single-use code, valid for 15 minutes.
 4. Click the Agent Chrome icon, paste the code and press Connect.
 

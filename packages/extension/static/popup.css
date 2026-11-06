@@ -151,3 +151,5 @@ body.prompt .actions{display:flex;flex-direction:column;gap:8px;margin-top:auto}
 .waiting{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0}
 .spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--blue);animation:spin .7s linear infinite}
 #localView code{font-size:11px;background:var(--hover);padding:1px 5px;border-radius:5px}
+.or{display:flex;align-items:center;gap:10px;margin:16px 0 10px;font-size:11.5px;color:var(--muted)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}

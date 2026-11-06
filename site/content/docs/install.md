@@ -22,8 +22,8 @@ In one pass, the installer:
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json` with `chmod 600`.
 2. Adds an MCP server named `agentchrome` to every agent it finds, in that agent's user-level config.
 3. Writes the `agentchrome` skill once to `~/.agents/skills/agentchrome` and symlinks it into each agent's skills folder.
-4. Unpacks the extension to `~/.agentchrome/extension`.
-5. Opens `chrome://extensions` and prints a pairing code, which it copies to your clipboard.
+4. Unpacks the extension to a visible **Agent Chrome** folder in Documents (`~/Documents/Agent Chrome` on macOS and Linux, `Documents\Agent Chrome` on Windows).
+5. Opens `chrome://extensions`, selects the folder in Finder or File Explorer, and prints a pairing code, which it copies to your clipboard.
 
 It also installs the CLI to `~/.local/bin/agentchrome`. If that folder is not on your `PATH`, call it by full path or add it to your shell profile. The installer backs up every JSON or TOML file it edits as `<file>.bak-agentchrome`.
 
@@ -32,7 +32,7 @@ It also installs the CLI to `~/.local/bin/agentchrome`. If that folder is not on
 The extension is not on the Chrome Web Store yet, so you load it unpacked.
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`. Run `agentchrome extension --path` to print the path.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it. Run `agentchrome extension --path` to print the path. Keep the folder where it is, because Chrome loads the extension from it.
 3. Pin **Agent Chrome**, click it, and press **Sign in to connect**, or paste the pairing code and press **Connect**.
 
 A zip of the extension is also at https://agentchrome.dev/agentchrome-extension.zip. For another profile, switch to it, load the same folder, and run `agentchrome pair` for a new code.
@@ -110,7 +110,7 @@ Then remove the extension in `chrome://extensions`.
 You need Node.js 18 or newer and Google Chrome 120 or newer. The installer detects the coding agents you have and configures each one.
 
 ### Why do I have to load the extension by hand?
-Chrome only lets a person install extensions, and Agent Chrome is not on the Chrome Web Store yet. You turn on Developer mode, click Load unpacked and choose `~/.agentchrome/extension`. It takes about a minute per profile.
+Chrome only lets a person install extensions, and Agent Chrome is not on the Chrome Web Store yet. You turn on Developer mode and drag the **Agent Chrome** folder from Documents onto `chrome://extensions`. It takes about a minute per profile.
 
 ### Gemini CLI shows the server as Disabled. What do I do?
 Gemini turns off MCP servers in folders you have not trusted. Trust the folder with `/permissions` inside Gemini and the server turns on.
@@ -119,4 +119,4 @@ Gemini turns off MCP servers in folders you have not trusted. Trust the folder w
 Yes. Add `--local` to the installer: `curl -fsSL https://agentchrome.dev/install | sh -s -- --local`. Then run `agentchrome serve --install`. See [local mode](/docs/local-mode).
 
 ### Does it work on Windows or Linux?
-The installer script and CLI run on Node.js, and the CLI has code paths for macOS, Windows and Linux to open `chrome://extensions`. The launchd service from `agentchrome serve --install` is macOS only. On Linux you run `agentchrome serve` from a systemd user unit.
+Yes. On Windows, run `irm https://agentchrome.dev/install.ps1 | iex` in PowerShell. On Linux, use the same `curl` command as macOS. The CLI runs on Node.js and opens `chrome://extensions` and the extension folder on all three. The launchd service from `agentchrome serve --install` is macOS only. On Linux you run `agentchrome serve` from a systemd user unit.

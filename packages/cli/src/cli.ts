@@ -1,4 +1,4 @@
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -89,12 +89,64 @@ async function api<T = any>(cfg: Pick<Config, "server" | "apiKey">, path: string
 const mcpUrl = (server: string) => `${server.replace(/\/+$/, "")}/mcp`;
 
 // ---------- extension ----------
-function extensionDir() {
-  return join(HOME_DIR, "extension");
+// Chrome loads an unpacked extension from a folder it keeps reading, so the folder must be easy to find and must stay.
+// It goes in Documents (not a hidden dot-folder, and not Downloads, which people clean out).
+const EXT_FOLDER = "Agent Chrome";
+const LEGACY_EXT_DIR = join(HOME_DIR, "extension");
+
+function documentsDir(): string {
+  const home = homedir();
+  try {
+    if (process.platform === "win32") {
+      // Documents is often redirected to OneDrive.
+      const p = execFileSync("powershell", ["-NoProfile", "-Command", "[Environment]::GetFolderPath('MyDocuments')"], { encoding: "utf8", timeout: 5000 }).trim();
+      if (p) return p;
+    } else if (process.platform === "linux") {
+      const p = execFileSync("xdg-user-dir", ["DOCUMENTS"], { encoding: "utf8", timeout: 3000 }).trim();
+      if (p && p !== home) return p;
+    }
+  } catch {}
+  return join(home, "Documents");
 }
 
-async function ensureExtension(server: string): Promise<string> {
-  const dest = extensionDir();
+function extensionDirCandidates(): string[] {
+  if (process.env.ACM_EXTENSION_DIR) return [process.env.ACM_EXTENSION_DIR];
+  return [join(documentsDir(), EXT_FOLDER), join(homedir(), EXT_FOLDER)];
+}
+
+/** True when the folder is free to (re)write: missing, empty, or a previous Agent Chrome extension. Never overwrite anything else. */
+function isOurs(dir: string): boolean {
+  if (!existsSync(dir)) return true;
+  try {
+    if (readdirSync(dir).filter((f) => !f.startsWith(".")).length === 0) return true;
+    return JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8")).name === "Agent Chrome";
+  } catch {
+    return false;
+  }
+}
+
+function unzip(zip: string, dest: string) {
+  // Windows 10+ ships bsdtar as tar.exe, which reads zip files; macOS and most Linux have unzip.
+  if (process.platform === "win32") return execFileSync("tar", ["-xf", zip, "-C", dest]);
+  try {
+    execFileSync("unzip", ["-qo", zip, "-d", dest]);
+  } catch {
+    execFileSync("tar", ["-xf", zip, "-C", dest]);
+  }
+}
+
+const README_TXT = `Google Chrome loads the Agent Chrome extension from this folder.
+Keep it here. If you move or delete it, Chrome turns the extension off.
+
+To load it: open chrome://extensions, turn on Developer mode (top right),
+then drag this folder onto the page, or click Load unpacked and choose it.
+
+Running the installer again updates this folder. To remove Agent Chrome,
+remove it in chrome://extensions, then delete this folder.
+https://agentchrome.dev/docs/install
+`;
+
+async function stageExtension(server: string, dest: string) {
   const here = dirname(fileURLToPath(import.meta.url));
   const bundled = [join(here, "extension"), join(here, "../../extension/dist")].find((p) => existsSync(join(p, "manifest.json")));
   rmSync(dest, { recursive: true, force: true });
@@ -104,36 +156,80 @@ async function ensureExtension(server: string): Promise<string> {
   } else {
     const res = await fetch(`${server}/agentchrome-extension.zip`);
     if (!res.ok) throw new Error(`Could not download the extension from ${server} (HTTP ${res.status})`);
+    mkdirSync(HOME_DIR, { recursive: true });
     const zip = join(HOME_DIR, "extension.zip");
     writeFileSync(zip, Buffer.from(await res.arrayBuffer()));
-    execFileSync("unzip", ["-qo", zip, "-d", dest]);
-    rmSync(zip);
+    try {
+      unzip(zip, dest);
+    } finally {
+      rmSync(zip, { force: true });
+    }
+  }
+  writeFileSync(join(dest, "README.txt"), README_TXT);
+}
+
+async function ensureExtension(server: string): Promise<string> {
+  let dest: string | undefined;
+  let lastError: unknown;
+  for (const dir of extensionDirCandidates()) {
+    if (!isOurs(dir)) continue;
+    try {
+      await stageExtension(server, dir);
+      dest = dir;
+      break;
+    } catch (e: any) {
+      // macOS may refuse Documents to the terminal (privacy settings); fall back to the next visible folder.
+      if (e?.code !== "EPERM" && e?.code !== "EACCES") throw e;
+      lastError = e;
+    }
+  }
+  if (!dest) throw lastError ?? new Error(`Could not find a free folder for the extension. Set ACM_EXTENSION_DIR to choose one.`);
+  // Older versions unpacked to a hidden folder. Keep it current so a copy already loaded from there keeps working.
+  if (existsSync(join(LEGACY_EXT_DIR, "manifest.json")) && LEGACY_EXT_DIR !== dest) {
+    try {
+      rmSync(LEGACY_EXT_DIR, { recursive: true, force: true });
+      cpSync(dest, LEGACY_EXT_DIR, { recursive: true });
+    } catch {}
   }
   return dest;
 }
 
-/** Open chrome://extensions in Chrome and show the folder to load, so loading takes two clicks. */
+const tildify = (p: string) => (process.platform !== "win32" && p.startsWith(homedir()) ? `~${p.slice(homedir().length)}` : p);
+
+/** Open chrome://extensions in Chrome and show the folder selected in the file manager, ready to drag in. */
 function openExtensionPage(dir: string) {
+  const quiet = { stdio: "ignore" as const, timeout: 5000 };
   try {
     if (process.platform === "darwin") {
-      execFileSync("open", ["-a", "Google Chrome", "chrome://extensions"], { stdio: "ignore" });
-      execFileSync("open", ["-R", join(dir, "manifest.json")], { stdio: "ignore" });
+      execFileSync("open", ["-a", "Google Chrome", "chrome://extensions"], quiet);
+      execFileSync("open", ["-R", dir], quiet);
     } else if (process.platform === "win32") {
-      execFileSync("cmd", ["/c", "start", "chrome", "chrome://extensions"], { stdio: "ignore" });
-      execFileSync("explorer", [dir], { stdio: "ignore" });
+      execFileSync("cmd", ["/c", "start", "chrome", "chrome://extensions"], quiet);
+      try {
+        execFileSync("explorer", [`/select,${dir}`], quiet);
+      } catch {} // explorer exits 1 even on success
     } else {
-      execFileSync("google-chrome", ["chrome://extensions"], { stdio: "ignore", timeout: 3000 });
+      for (const bin of ["google-chrome", "google-chrome-stable", "chromium"]) {
+        try {
+          execFileSync(bin, ["chrome://extensions"], quiet);
+          break;
+        } catch {}
+      }
+      execFileSync("xdg-open", [dirname(dir)], quiet);
     }
   } catch {}
 }
 
 function printExtensionSteps(dir: string) {
+  const fm = process.platform === "darwin" ? "Finder" : process.platform === "win32" ? "File Explorer" : "your file manager";
   console.log(`
 ${bold("Load the Chrome extension")} ${dim("(once per Chrome profile)")}
+  The extension is in the ${bold(`"${EXT_FOLDER}"`)} folder: ${violet(tildify(dir))}
   1. Open ${cyan("chrome://extensions")} and turn on ${bold("Developer mode")} (top right).
-  2. Click ${bold("Load unpacked")} and choose:
-     ${violet(dir)}
-  3. Pin ${bold("Agent Chrome")} from the puzzle-piece menu, click it, and paste a pairing code.
+  2. Drag the ${bold(`"${EXT_FOLDER}"`)} folder from ${fm} onto that page.
+     ${dim(`Or click Load unpacked and choose the "${EXT_FOLDER}" folder.`)}
+  3. Pin ${bold("Agent Chrome")} from the puzzle-piece menu, click it, and paste the pairing code.
+  ${dim("Keep the folder where it is: Chrome loads the extension from it.")}
 `);
 }
 

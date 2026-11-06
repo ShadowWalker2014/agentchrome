@@ -24,14 +24,14 @@ You need Node.js 18 or newer and Chrome 120 or newer. The installer:
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json`.
 2. Writes the MCP server into `~/.codex/config.toml` (or `$CODEX_HOME/config.toml` when `CODEX_HOME` is set). It backs the file up as `config.toml.bak-agentchrome`.
 3. Links the `agentchrome` skill into `~/.codex/skills`.
-4. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+4. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Codex only, run `agentchrome install codex`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Press **Sign in to connect** in the extension popup, or paste the pairing code.
 
 The extension is not on the Chrome Web Store yet. A zip is at https://agentchrome.dev/agentchrome-extension.zip if you need to unpack it yourself.

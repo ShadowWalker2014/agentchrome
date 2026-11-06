@@ -25,14 +25,14 @@ It needs Node.js 18 or newer and Chrome 120 or newer. When it detects Antigravit
 2. Runs `agy mcp add --type http` if `agy` is installed.
 3. Adds `agentchrome` to `~/.gemini/antigravity/mcp_config.json`, after saving a `.bak-agentchrome` backup.
 4. Links the `agentchrome` skill into `~/.gemini/antigravity/global_skills`.
-5. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+5. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Antigravity only, run `agentchrome install antigravity`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Press **Sign in to connect** in the popup, or paste the pairing code.
 
 ## Manual configuration

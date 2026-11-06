@@ -87,6 +87,32 @@ pre .c{color:var(--subtle)}
 .final .ctas{margin-top:24px}
 .btn.primary{background:var(--blue);box-shadow:none}.btn.primary:hover{background:#1F55F0}
 footer{margin-top:72px;padding-top:28px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:18px;color:var(--subtle);font-size:13.5px}footer a{text-decoration:none}footer a:hover{color:var(--fg)}
+.iw-host{max-width:1000px;margin:0 auto}
+.iw-os{display:flex;justify-content:center;gap:4px;width:max-content;margin:0 auto 18px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px var(--line)}
+.iw-os button{height:34px;padding:0 16px;border:0;border-radius:8px;background:none;color:var(--muted);font:500 14px Inter,system-ui;cursor:pointer;transition:background-color .15s,color .15s}
+.iw-os button:hover{color:var(--fg)}
+.iw-os button[aria-selected="true"]{background:rgba(255,255,255,.1);color:var(--fg)}
+.iw-host .iw-cmd{margin:0 auto 10px}
+.iw-where{text-align:center;margin-bottom:28px}
+.iw-host:not([data-os="mac"]) [data-for="mac"],.iw-host:not([data-os="win"]) [data-for="win"],.iw-host:not([data-os="linux"]) [data-for="linux"]{display:none}
+.iw-host .ss-fit{margin:0 auto}
+.iw-slot{max-width:1000px;margin:0 auto;aspect-ratio:1000/560;border-radius:16px;background:radial-gradient(720px 420px at 22% -8%,rgba(47,107,255,.5),transparent 70%),#0b0c10;box-shadow:inset 0 0 0 1px var(--line)}
+.iw-host[data-live] .iw-slot{aspect-ratio:auto;background:none;box-shadow:none;border-radius:0}
+.iw-steps{list-style:none;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:28px 0 0;padding:0}
+.iw-steps li{position:relative;padding:16px 16px 18px;border-radius:14px;background:var(--bg2);box-shadow:0 0 0 1px var(--line);transition:box-shadow .2s,background-color .2s}
+.iw-host[data-live] .iw-steps li{cursor:pointer}
+.iw-host[data-live] .iw-steps li:hover{background:#151518}
+.iw-steps li:focus-visible{outline:2px solid var(--blue2);outline-offset:2px}
+.iw-steps li::before{content:attr(data-n);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.08);color:var(--muted);font-weight:600;font-size:12px;margin-bottom:12px;transition:background-color .2s,color .2s}
+.iw-steps li[data-done]::before{background:rgba(47,107,255,.2);color:#BFD2FF}
+.iw-steps li[data-active]{box-shadow:0 0 0 1px rgba(47,107,255,.6),0 0 30px -10px rgba(47,107,255,.5)}
+.iw-steps li[data-active]::before{background:var(--blue);color:#fff}
+.iw-steps h3{margin:0 0 6px;font-size:14.5px;font-weight:600;letter-spacing:-.015em;line-height:1.3}
+.iw-steps p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.5}
+.iw-steps b{color:#D4D4D8;font-weight:500}
+.iw-steps code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:12px;color:#D4D4D8;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px}
+@media (max-width:1000px){.iw-steps{grid-template-columns:1fr 1fr}}
+@media (max-width:807px){.iw-slot{max-width:342px;aspect-ratio:342/480}.iw-host[data-live] .iw-steps li:not([data-active]){display:none}.iw-steps{grid-template-columns:1fr;margin-top:18px}.iw-os button{padding:0 12px}}
 @media (max-width:820px){.split,.chat,.steps,.grid{grid-template-columns:1fr}.hero{padding-top:44px}nav .links a:not(.star){display:none}.cmd{font-size:12px}}
 </style></head>
 <body><main>
@@ -98,8 +124,8 @@ footer{margin-top:72px;padding-top:28px;border-top:1px solid var(--line);display
 <a class="badge" href="https://github.com/ShadowWalker2014/agentchrome"><i></i>Open source · MIT · Cloudflare or local</a>
 <h1>Let your coding agents use<br><em>the Chrome you already use.</em></h1>
 <p class="lead">A Chrome extension and MCP server that let Claude Code, Codex, Gemini, Grok and other agents work in your signed-in Chrome profiles. Each agent gets its own tab group, and you can see exactly what it's doing.</p>
-<div class="cmd"><span><b>$</b>curl -fsSL __SERVER__/install | sh</span><button onclick="navigator.clipboard.writeText('curl -fsSL __SERVER__/install | sh');this.textContent='Copied'">Copy</button></div>
-<p class="sub">Sets up every agent on your machine in one step. Or <a href="https://github.com/ShadowWalker2014/agentchrome/blob/main/AGENT_INSTALL.md">let your agent install it</a>.</p>
+<div class="cmd"><span><b data-sigil>$</b><span data-cmd>curl -fsSL __SERVER__/install | sh</span></span><button type="button" data-copy>Copy</button></div>
+<p class="sub">Sets up every agent on your machine in one step. <a href="#install">See each step</a> or <a href="https://github.com/ShadowWalker2014/agentchrome/blob/main/AGENT_INSTALL.md">let your agent install it</a>.</p>
 
 <div class="demo"><div class="win">
   <div class="bar"><i></i><i></i><i></i><span class="tab">Claude Code</span><span class="tab b">Codex</span></div>
@@ -134,12 +160,23 @@ footer{margin-top:72px;padding-top:28px;border-top:1px solid var(--line);display
 <div class="card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><h3>Secure by default</h3><p>OAuth 2.1 or hashed account keys, single-use pairing codes, per-profile revocation, optional approval for each new site.</p></div>
 </div>
 
-<h2>Set up in a minute</h2>
-<p class="h2sub">One command configures every agent on your machine at user level.</p>
-<div class="steps">
-<div class="step"><h3>Run the installer</h3><p>It creates your account, adds the MCP server to Claude Code, Codex, Gemini, Antigravity, Grok, Muse, Cursor and opencode, and links the skill.</p></div>
-<div class="step"><h3>Load the extension</h3><p>The installer opens <code>chrome://extensions</code> and the folder to load. Then paste the pairing code it printed.</p></div>
-<div class="step"><h3>Ask your agent</h3><p>"Use agentchrome to open my dashboard and record the checkout flow." It works in its own tab group.</p></div>
+<h2 id="install">Set up in a minute</h2>
+<p class="h2sub">One command sets up your agents. Then load the extension in Chrome and connect it.</p>
+<section class="iw-host" id="iw" data-os="mac" aria-label="Install Agent Chrome">
+<div class="iw-os" role="tablist" aria-label="Your computer">
+  <button type="button" role="tab" data-os="mac" aria-selected="true">macOS</button><button type="button" role="tab" data-os="win" aria-selected="false">Windows</button><button type="button" role="tab" data-os="linux" aria-selected="false">Linux</button>
+</div>
+<div class="cmd iw-cmd"><span><b data-sigil>$</b><span data-cmd>curl -fsSL __SERVER__/install | sh</span></span><button type="button" data-copy>Copy</button></div>
+<p class="sub iw-where"><span data-for="mac">Paste it into Terminal and press Return.</span><span data-for="win">Paste it into PowerShell and press Enter.</span><span data-for="linux">Paste it into a terminal and press Enter.</span></p>
+<div class="iw-frame"><div id="iw-stage" class="iw-slot" aria-hidden="true"></div></div>
+<ol class="iw-steps">
+<li data-step="0" data-n="1"><h3>Run the installer</h3><p><span data-for="mac">Open Terminal, paste the command and press Return.</span><span data-for="win">Open PowerShell, paste the command and press Enter.</span><span data-for="linux">Open a terminal, paste the command and press Enter.</span> It creates your account, sets up your agents and copies a pairing code.</p></li>
+<li data-step="1" data-n="2"><h3>Find the Agent Chrome folder</h3><p>The installer puts the extension in <b>Documents</b> &rsaquo; <b>Agent Chrome</b> and shows it in <span data-for="mac">Finder</span><span data-for="win">File Explorer</span><span data-for="linux">Files</span>. Keep the folder there: Chrome loads the extension from it.</p></li>
+<li data-step="2" data-n="3"><h3>Turn on Developer mode</h3><p>The installer opens <code>chrome://extensions</code>. Turn on <b>Developer mode</b> in the top right corner.</p></li>
+<li data-step="3" data-n="4"><h3>Drag the folder into Chrome</h3><p>Drag the <b>Agent Chrome</b> folder onto the Extensions page. Or click <b>Load unpacked</b> and choose Documents &rsaquo; Agent Chrome.</p></li>
+<li data-step="4" data-n="5"><h3>Pin it and connect</h3><p>Click the puzzle icon, pin <b>Agent Chrome</b>, open it and paste the pairing code. Then ask your agent to "use agentchrome".</p></li>
+</ol>
+</section>
 </div>
 
 <h2 id="chat">Also works in Claude and ChatGPT</h2>
@@ -170,6 +207,42 @@ claude mcp add --scope user --transport http agentchrome __SERVER__/mcp</pre>
 
 <footer><span>MIT licensed · Operated by Circo, Inc.</span><a href="/docs">Docs</a><a href="/compare">Compare</a><a href="/use-cases">Use cases</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a><a href="https://github.com/ShadowWalker2014/agentchrome">GitHub</a><a href="https://github.com/ShadowWalker2014/agentchrome/blob/main/AGENT_INSTALL.md">Agent install guide</a><a href="https://github.com/ShadowWalker2014/agentchrome#security">Security</a><a href="https://github.com/ShadowWalker2014/agentchrome/issues">Issues</a></footer>
 </main>
+<script>
+(() => {
+  const S = "__SERVER__", CMD = { mac: "curl -fsSL " + S + "/install | sh", linux: "curl -fsSL " + S + "/install | sh", win: "irm " + S + "/install.ps1 | iex" };
+  const host = document.getElementById("iw");
+  const ua = navigator.userAgent.toLowerCase(), pf = ((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "").toLowerCase();
+  const asked = new URLSearchParams(location.search).get("os");
+  let os = CMD[asked] ? asked : pf.includes("win") || ua.includes("windows") ? "win" : (pf.includes("linux") || ua.includes("linux") || ua.includes("cros")) && !ua.includes("android") ? "linux" : "mac";
+  const show = (next, announce) => {
+    os = next;
+    if (host) host.dataset.os = os;
+    document.querySelectorAll("[data-cmd]").forEach((e) => (e.textContent = CMD[os]));
+    document.querySelectorAll("[data-sigil]").forEach((e) => (e.textContent = os === "win" ? ">" : "$"));
+    document.querySelectorAll(".iw-os [data-os]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.os === os)));
+    if (announce && host) host.dispatchEvent(new CustomEvent("iw:os", { detail: os }));
+  };
+  show(os, false);
+  document.querySelectorAll(".iw-os [data-os]").forEach((b) => b.addEventListener("click", () => b.dataset.os !== os && show(b.dataset.os, true)));
+  document.querySelectorAll("[data-copy]").forEach((b) => b.addEventListener("click", () => {
+    navigator.clipboard.writeText(CMD[os]).then(() => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1800); }, () => {});
+  }));
+  if (!host || !("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    if (!entries.some((e) => e.isIntersecting)) return;
+    io.disconnect();
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "/install-demo.css";
+    document.head.append(css);
+    const js = document.createElement("script");
+    js.type = "module";
+    js.src = "/install-demo.js";
+    document.body.append(js);
+  }, { rootMargin: "600px 0px" });
+  io.observe(host);
+})();
+</script>
 <script>
 fetch("https://api.github.com/repos/ShadowWalker2014/agentchrome").then(r => r.ok ? r.json() : null).then(d => {
   if (!d) return;

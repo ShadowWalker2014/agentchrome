@@ -1,0 +1,1185 @@
+/* The install walkthrough's scene. Everything is scoped under .iw. */
+
+.iw .ss-stage {
+  --ss-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ss-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --iw-travel: cubic-bezier(0.45, 0, 0.1, 1);
+  --iw-shadow-front: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 28px 70px -14px rgba(0, 0, 0, 0.75), 0 10px 24px -10px rgba(0, 0, 0, 0.5);
+  --iw-shadow-back: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  font-family: var(--ss-font);
+  letter-spacing: -0.006em;
+  color: #18181b;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #0b0c10;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.iw .iw-desk {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(720px 420px at 22% -8%, rgba(47, 107, 255, 0.5), transparent 70%),
+    radial-gradient(640px 420px at 100% 108%, rgba(31, 85, 240, 0.32), transparent 70%),
+    linear-gradient(180deg, #10131c, #0a0b0f);
+}
+
+.iw .iw-mark {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.iw .iw-spacer {
+  flex: 1;
+}
+
+.iw .iw-faint {
+  color: #a1a1aa;
+}
+
+.iw .iw-logo {
+  display: block;
+  flex: none;
+  border-radius: 23%;
+}
+
+/* ---------- windows ---------- */
+
+.iw .iw-win {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--iw-shadow-back);
+  will-change: transform;
+  transition:
+    transform 0.6s var(--iw-travel),
+    box-shadow 0.3s ease;
+}
+
+.iw--win .iw-win {
+  border-radius: 8px;
+}
+
+.iw .iw-win[data-front] {
+  box-shadow: var(--iw-shadow-front);
+}
+
+/* A window behind the active one is a touch quieter, without turning see-through */
+.iw .iw-win::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(9, 9, 11, 0.07);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.iw .iw-win[data-front]::after {
+  opacity: 0;
+}
+
+/* Compact: one window at a time slides up over Chrome. One leaving keeps its
+   place in the stack until it has slid out of view. */
+.iw .ss-stage[data-layout="compact"] .iw-win:not([data-front]) {
+  transition:
+    transform 0.55s var(--iw-travel),
+    box-shadow 0.3s ease,
+    z-index 0s linear 0.55s;
+}
+
+.iw .iw-lights {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 0 4px 0 14px;
+}
+
+.iw .iw-lights i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d4d4d8;
+}
+
+.iw .iw-ctrls {
+  display: flex;
+  flex: none;
+  margin-left: auto;
+  align-self: stretch;
+  color: #52525b;
+}
+
+.iw .iw-ctrls > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+}
+
+.iw .iw-ctrls[data-os="linux"] {
+  align-self: center;
+  gap: 10px;
+  padding-right: 10px;
+}
+
+.iw .iw-ctrls[data-os="linux"] > span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.iw .iw-titlebar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 36px;
+  background: #f4f4f5;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.iw--linux .iw-titlebar {
+  height: 42px;
+}
+
+.iw .iw-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #71717a;
+  white-space: nowrap;
+}
+
+.iw .iw-title--strong {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #27272a;
+}
+
+/* Windows titles sit at the left, after the app's icon */
+.iw--win .iw-title {
+  position: static;
+  transform: none;
+  padding-left: 14px;
+  flex: 1;
+}
+
+/* ---------- Chrome ---------- */
+
+.iw .iw-tabstrip {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+  background: #e4e4e7;
+}
+
+.iw--mac .iw-tabstrip .iw-lights {
+  align-self: center;
+  padding-right: 12px;
+}
+
+.iw .iw-tabsearch {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  margin: 6px 8px 0 0;
+  border-radius: 7px;
+  color: #52525b;
+}
+
+.iw--win .iw-tabstrip,
+.iw--linux .iw-tabstrip {
+  padding-left: 8px;
+}
+
+.iw--win .iw-tabstrip .iw-ctrls,
+.iw--linux .iw-tabstrip .iw-ctrls {
+  align-self: stretch;
+}
+
+.iw--linux .iw-tabstrip .iw-ctrls {
+  align-self: center;
+}
+
+.iw .iw-tab {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  width: 196px;
+  height: 32px;
+  padding: 0 10px 0 12px;
+  border-radius: 9px 9px 0 0;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #27272a;
+}
+
+.iw .iw-tab-ic {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: #52525b;
+}
+
+.iw .iw-tab-t {
+  white-space: nowrap;
+}
+
+.iw .iw-tab-x {
+  margin-left: auto;
+  color: #a1a1aa;
+}
+
+.iw .iw-newtab {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 6px;
+  color: #52525b;
+}
+
+.iw .iw-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  height: 45px;
+  padding: 0 12px 0 14px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e7;
+  color: #52525b;
+}
+
+.iw .iw-toolbar > svg {
+  flex: none;
+}
+
+.iw .iw-off {
+  color: #c4c4c9;
+}
+
+.iw .iw-omni {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 15px;
+  background: #f4f4f5;
+  font-size: 12.5px;
+  color: #3f3f46;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.iw .iw-tbtn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.iw .iw-tbtn[data-open] {
+  background: #e4e4e7;
+}
+
+.iw .iw-kebab {
+  width: 22px;
+}
+
+/* The pinned icon opens its own room left of the puzzle piece */
+.iw .iw-pinslot {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  width: 0;
+  margin-right: -12px;
+  overflow: hidden;
+  transition:
+    width 0.4s var(--iw-travel),
+    margin-right 0.4s var(--iw-travel);
+}
+
+.iw .iw-pinslot > .iw-tbtn {
+  transform: scale(0.6);
+  opacity: 0;
+  transition:
+    transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) 0.1s,
+    opacity 0.3s ease 0.1s,
+    background-color 0.2s ease;
+}
+
+.iw .iw-pinslot[data-on] {
+  width: 28px;
+  margin-right: 0;
+}
+
+.iw .iw-pinslot[data-on] > .iw-tbtn {
+  transform: none;
+  opacity: 1;
+}
+
+.iw .iw-avatar {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #d4d4d8;
+}
+
+.iw .iw-page {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: #f7f7f8;
+}
+
+.iw .iw-site,
+.iw .iw-ext {
+  will-change: transform;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.iw .iw-site[data-show],
+.iw .iw-ext[data-show] {
+  opacity: 1;
+  transform: none;
+}
+
+/* agentchrome.dev, small */
+.iw .iw-site {
+  background:
+    radial-gradient(420px 220px at 50% -40px, rgba(47, 107, 255, 0.32), transparent 70%),
+    #0a0a0b;
+}
+
+.iw .iw-site-in {
+  padding: 0 20px;
+}
+
+.iw .iw-site-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+}
+
+.iw .iw-site-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 44px;
+}
+
+.iw .iw-site-h2 {
+  margin-top: 10px;
+}
+
+.iw .iw-site-lead {
+  margin-top: 18px;
+}
+
+.iw .iw-site-cmd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 440px;
+  max-width: 100%;
+  height: 44px;
+  margin-top: 26px;
+  padding: 0 6px 0 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.iw .iw-site-cmd-t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font: 12px/1.5 var(--ss-mono);
+  color: #e4e4e7;
+  white-space: nowrap;
+}
+
+.iw .iw-site-cmd-t b {
+  margin-right: 8px;
+  font-weight: 400;
+  color: #71717a;
+}
+
+.iw .iw-site-copy {
+  display: grid;
+  flex: none;
+  place-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: #2f6bff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.iw .iw-site-copy[data-pressed] {
+  background: #1f55f0;
+}
+
+/* The site's demo window, below the command */
+.iw .iw-site-demo {
+  width: 560px;
+  max-width: 100%;
+  height: 260px;
+  margin-top: 40px;
+  padding: 3px;
+  border-radius: 14px;
+  background: #2f6bff;
+  box-shadow: 0 0 40px rgba(47, 107, 255, 0.35);
+}
+
+.iw .iw-site-demo-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 11px 11px 0 0;
+  background: #1a1a1d;
+}
+
+.iw .iw-site-demo-bar i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3a3a3f;
+}
+
+.iw .iw-site-demo::after {
+  content: "";
+  display: block;
+  height: calc(100% - 26px);
+  border-radius: 0 0 11px 11px;
+  background: #fff;
+}
+
+/* chrome://extensions */
+.iw .iw-ext {
+  background: #f7f7f8;
+}
+
+.iw .iw-ext-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 55px;
+  padding: 0 18px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.iw .iw-ext-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #18181b;
+}
+
+.iw .iw-search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  height: 32px;
+  margin-left: 34px;
+  padding: 0 12px;
+  border-radius: 16px;
+  background: #f4f4f5;
+  color: #a1a1aa;
+}
+
+.iw .iw-dev {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #3f3f46;
+}
+
+.iw .iw-devbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 18px;
+  background: #fff;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.iw .iw-devbtn,
+.iw .iw-cardbtn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px #d4d4d8;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2f6bff;
+  background: #fff;
+}
+
+.iw .iw-cardbtn {
+  height: 26px;
+}
+
+.iw .iw-cards {
+  display: flex;
+  flex-direction: column;
+  width: 456px;
+  max-width: 100%;
+  padding: 18px 18px 0;
+}
+
+.iw .iw-card {
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 0 0 1px #e4e4e7;
+}
+
+.iw .iw-card--ours {
+  box-shadow:
+    0 0 0 1px #e4e4e7,
+    0 6px 16px -8px rgba(24, 24, 27, 0.18);
+}
+
+.iw .iw-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iw .iw-card-ic {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #e4e4e7;
+}
+
+.iw .iw-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.iw .iw-card-sub {
+  margin-top: 9px;
+}
+
+.iw .iw-card-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #18181b;
+}
+
+.iw .iw-card-name span {
+  margin-left: 6px;
+  font-weight: 400;
+  color: #71717a;
+}
+
+.iw .iw-card-desc {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #71717a;
+  white-space: nowrap;
+}
+
+.iw .iw-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.iw .iw-blank {
+  display: block;
+  height: 60px;
+}
+
+.iw .iw-dropzone {
+  position: absolute;
+  inset: 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 2px dashed #2f6bff;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 14px;
+  font-weight: 500;
+  color: #2f6bff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.iw .iw-dropzone[data-show] {
+  opacity: 1;
+}
+
+/* The extensions menu and the popup hang from the toolbar */
+.iw .iw-menu {
+  top: 86px;
+  right: 76px;
+  width: 260px;
+  padding: 6px;
+  --ss-popover-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 12px 32px -6px rgba(24, 24, 27, 0.3);
+}
+
+.iw .iw-menu-head {
+  padding: 8px 10px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.iw .iw-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 6px 0 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #27272a;
+}
+
+.iw .iw-menu-name {
+  flex: 1;
+}
+
+.iw .iw-pin {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #71717a;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.iw .iw-pin[data-hover] {
+  background: #f4f4f5;
+}
+
+.iw .iw-pin[data-on] {
+  color: #2f6bff;
+}
+
+.iw .iw-pin[data-on] svg {
+  fill: #2f6bff;
+}
+
+.iw .iw-menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: #e4e4e7;
+}
+
+.iw .iw-menu-manage {
+  color: #3f3f46;
+}
+
+.iw .iw-popup {
+  top: 86px;
+  right: 112px;
+  width: 300px;
+  padding: 0;
+  --ss-popover-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 40px -8px rgba(24, 24, 27, 0.35);
+}
+
+.iw .iw-pop {
+  padding: 14px 16px 16px;
+}
+
+.iw .iw-pop-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 26px;
+}
+
+.iw .iw-pop-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.iw .iw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: #f4f4f5;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #71717a;
+  transition: color 0.2s ease;
+}
+
+.iw .iw-status i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a1a1aa;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.iw .iw-status[data-on] {
+  color: #18181b;
+}
+
+.iw .iw-status[data-on] i {
+  background: #2f6bff;
+  box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18);
+}
+
+.iw .iw-pop-h {
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #18181b;
+}
+
+.iw .iw-pop-label {
+  margin-top: 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #71717a;
+}
+
+.iw .iw-code {
+  display: grid;
+  place-items: center;
+  height: 46px;
+  margin-top: 6px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px #d4d4d8;
+  font: 500 17px/1 var(--ss-mono);
+  letter-spacing: 0.12em;
+  transition: box-shadow 0.15s ease;
+}
+
+.iw .iw-code[data-focus] {
+  box-shadow:
+    inset 0 0 0 1px #2f6bff,
+    0 0 0 3px rgba(47, 107, 255, 0.16);
+}
+
+.iw .iw-code-ph {
+  color: #c4c4c9;
+}
+
+.iw .iw-code-v {
+  color: #18181b;
+  margin-right: -0.12em;
+}
+
+.iw .iw-connect {
+  display: grid;
+  place-items: center;
+  height: 38px;
+  margin-top: 12px;
+  border-radius: 8px;
+  background: #2f6bff;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  transition: background-color 0.15s ease;
+}
+
+.iw .iw-connect[data-pressed] {
+  background: #1f55f0;
+}
+
+.iw .iw-connect-done {
+  width: 88px;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- terminal ---------- */
+
+.iw .iw-term {
+  background: #111113;
+}
+
+.iw .iw-term .iw-titlebar {
+  background: #1c1c1f;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.iw .iw-term .iw-title {
+  color: #a1a1aa;
+}
+
+.iw .iw-term .iw-lights i {
+  background: #3f3f46;
+}
+
+.iw .iw-term .iw-ctrls {
+  color: #a1a1aa;
+}
+
+.iw .iw-term .iw-ctrls[data-os="linux"] > span {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.iw .iw-term::after {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.iw .iw-term-body {
+  flex: 1;
+  padding: 12px 16px;
+  font: 12px/1.7 var(--ss-mono);
+  color: #e4e4e7;
+  letter-spacing: 0;
+}
+
+.iw .iw-prompt {
+  color: #a1a1aa;
+}
+
+.iw--win .iw-prompt {
+  color: #e4e4e7;
+}
+
+.iw .iw-cmd {
+  display: none;
+}
+
+.iw .iw-cmd[data-on] {
+  display: inline;
+}
+
+.iw .iw-caret {
+  display: none;
+  width: 7px;
+  height: 14px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  background: #e4e4e7;
+  animation: iw-blink 1s steps(1) infinite;
+}
+
+.iw .iw-caret[data-on] {
+  display: inline-block;
+}
+
+@keyframes iw-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.iw .iw-out {
+  will-change: transform;
+  opacity: 0;
+  transform: translateY(3px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.iw .iw-out[data-on] {
+  opacity: 1;
+  transform: none;
+}
+
+.iw .iw-out b {
+  font-weight: 500;
+  color: #5b8dff;
+}
+
+.iw .iw-out em {
+  font-style: normal;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 4px;
+}
+
+.iw .iw-out i {
+  font-style: normal;
+  color: #71717a;
+}
+
+/* ---------- file manager ---------- */
+
+.iw .iw-files-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.iw .iw-side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  width: 140px;
+  padding: 10px 8px;
+  background: #f4f4f5;
+  border-right: 1px solid #e4e4e7;
+}
+
+.iw .iw-side-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: #52525b;
+}
+
+.iw .iw-side-item svg {
+  flex: none;
+  color: #2f6bff;
+}
+
+.iw .iw-side-item[data-current] {
+  background: rgba(24, 24, 27, 0.07);
+  color: #18181b;
+  font-weight: 500;
+}
+
+.iw .iw-side-bar {
+  margin: 12px 0 0 10px;
+}
+
+.iw .iw-list {
+  flex: 1;
+  min-width: 0;
+  padding: 8px;
+}
+
+.iw .iw-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.iw .iw-row--ours {
+  font-weight: 500;
+  color: #18181b;
+}
+
+.iw .iw-row[data-sel] {
+  background: #2f6bff;
+  color: #fff;
+}
+
+.iw--win .iw-row[data-sel] {
+  background: rgba(47, 107, 255, 0.14);
+  color: #18181b;
+}
+
+.iw .iw-row-ic {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+.iw .iw-folder {
+  color: #2f6bff;
+  fill: #b9cfff;
+}
+
+.iw .iw-row[data-sel] .iw-folder {
+  color: #fff;
+  fill: #8fb0ff;
+}
+
+.iw--win .iw-row[data-sel] .iw-folder {
+  color: #2f6bff;
+  fill: #b9cfff;
+}
+
+.iw .iw-doc {
+  color: #a1a1aa;
+}
+
+/* The drag image rides with the arrow, as file managers draw it */
+.iw .iw-ghost {
+  will-change: transform;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.iw .iw-ghost[data-on] {
+  opacity: 1;
+}
+
+.iw .iw-ghost[data-dropped] {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.iw .iw-ghost .iw-folder {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.iw .iw-ghost-t {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #2f6bff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- compact: the phone column ---------- */
+
+.iw .ss-stage[data-layout="compact"] .iw-tab {
+  width: 150px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-toolbar {
+  gap: 10px;
+  padding: 0 8px 0 12px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-in {
+  padding: 0 14px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-hero {
+  padding-top: 22px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-cmd {
+  gap: 8px;
+  height: 40px;
+  margin-top: 20px;
+  padding-left: 10px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-cmd-t {
+  font-size: 9px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-cmd-t b {
+  display: none;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-site-copy {
+  padding: 0 10px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-ext-head {
+  padding: 0 12px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-devbar {
+  padding: 10px 12px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-cards {
+  padding: 12px 12px 0;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-term-body {
+  padding: 10px 12px;
+  font-size: 11px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-menu {
+  right: 44px;
+  width: 250px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-popup {
+  right: 10px;
+  width: 286px;
+}
+
+/* PowerShell's prompt is long: keep the command on one line */
+.iw--win .ss-stage[data-layout="wide"] .iw-term-body {
+  font-size: 11px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-devbar {
+  gap: 6px;
+}
+
+.iw .ss-stage[data-layout="compact"] .iw-devbtn {
+  padding: 0 10px;
+}

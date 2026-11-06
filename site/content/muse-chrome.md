@@ -23,14 +23,14 @@ It needs Node.js 18 or newer and Chrome 120 or newer. When it finds Muse (the `m
 
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json`.
 2. Adds `agentchrome` under `mcpServers` in `~/.config/muse/settings.json`, after saving `settings.json.bak-agentchrome`. If `XDG_CONFIG_HOME` is set, the file is `$XDG_CONFIG_HOME/muse/settings.json`.
-3. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+3. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Muse only, run `agentchrome install muse`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Press **Sign in to connect** in the popup, or paste the pairing code.
 
 ## Manual configuration

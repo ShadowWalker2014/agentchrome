@@ -24,7 +24,7 @@ You need Node.js 18 or newer and Chrome 120 or newer. In one pass the installer:
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json` (`chmod 600`).
 2. Runs `claude mcp add --scope user` for you, which writes the server into `~/.claude.json`.
 3. Links the `agentchrome` skill into `~/.claude/skills`.
-4. Unpacks the extension to `~/.agentchrome/extension`.
+4. Unpacks the extension to `~/Documents/Agent Chrome`.
 5. Prints a pairing code and opens `chrome://extensions`.
 
 To install for Claude Code only, run `agentchrome install claude`.
@@ -34,7 +34,7 @@ To install for Claude Code only, run `agentchrome install claude`.
 The extension is not on the Chrome Web Store yet, so you load it unpacked:
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Click the Agent Chrome icon, then press **Sign in to connect** or paste the pairing code.
 
 Run `agentchrome status` to confirm that the browser shows as online and Claude Code has a check mark.
@@ -107,7 +107,7 @@ You can also turn on "ask before each new site", keep a block list, and leave hi
 ## Frequently asked questions
 
 ### How do I let Claude Code control my real Chrome browser?
-Run `curl -fsSL https://agentchrome.dev/install | sh`, load the unpacked extension from `~/.agentchrome/extension`, and start a new Claude Code session. Then ask Claude Code to use agentchrome to open a page. The work happens in a tab group inside your own Chrome profile.
+Run `curl -fsSL https://agentchrome.dev/install | sh`, drag the **Agent Chrome** folder from Documents onto `chrome://extensions`, and start a new Claude Code session. Then ask Claude Code to use agentchrome to open a page. The work happens in a tab group inside your own Chrome profile.
 
 ### Does Claude Code need the Claude in Chrome extension for this?
 No. Agent Chrome is its own extension and MCP server. It uses the same tool names as Claude in Chrome, so existing prompts transfer, but nothing here depends on Anthropic's extension.

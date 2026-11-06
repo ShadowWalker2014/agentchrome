@@ -18,6 +18,12 @@
       <div id="pairError" class="alert" role="alert" hidden></div>
       <button id="signin" class="btn primary block lg" type="button">Sign in to connect</button>
       <p id="waiting" class="waiting muted small" hidden><span class="spin"></span>Finish signing in in the new tab…</p>
+      <div class="or"><span>or use the code from the installer</span></div>
+      <form id="codeForm" class="stack" autocomplete="off">
+        <input id="cloudCode" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" autocapitalize="characters" aria-label="Pairing code">
+        <div id="codeError" class="alert" role="alert" hidden></div>
+        <button id="cloudPair" class="btn block" type="submit">Connect with code</button>
+      </form>
       <button id="toLocal" class="link center" type="button">Use a local server instead</button>
     </div>
 

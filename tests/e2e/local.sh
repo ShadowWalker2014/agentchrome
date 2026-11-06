@@ -3,7 +3,7 @@
 set -e
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TMP=$(mktemp -d)
-export ACM_HOME="$TMP/home" XDG_CONFIG_HOME="$TMP/config"
+export ACM_HOME="$TMP/home" XDG_CONFIG_HOME="$TMP/config" ACM_EXTENSION_DIR="$TMP/extension"
 CLI="$ROOT/packages/cli/dist/cli.mjs"
 node "$CLI" setup --local --no-install > "$TMP/setup.log"
 PORT=47999

@@ -32,7 +32,6 @@ async function render() {
   if (!sv.value) sv.value = "http://127.0.0.1:47823";
   $("waiting").hidden = !s.connectPending;
   if (paired) $("doneName").textContent = s.name || "This profile";
-  const code = $<HTMLInputElement>("code");
   $("s2").classList.add("active");
 }
 
@@ -63,7 +62,8 @@ $("pairForm").addEventListener("submit", async (e) => {
     await chrome.permissions.request({ permissions: ["identity", "identity.email"] }).catch(() => false);
     const r = await send<any>({
       type: "acm:pair",
-      server: $<HTMLInputElement>("server").value.trim(),
+      // The local server address only counts while its section is open; otherwise the code is for the cloud server.
+      server: $<HTMLDetailsElement>("localBox").open ? $<HTMLInputElement>("server").value.trim() : __DEFAULT_SERVER__,
       code: c,
       name: $<HTMLInputElement>("pname").value.trim() || "Chrome",
     });
@@ -74,7 +74,7 @@ $("pairForm").addEventListener("submit", async (e) => {
   } finally {
     btn.disabled = false;
     btn.classList.remove("loading");
-    btn.textContent = "Connect";
+    btn.textContent = "Connect with code";
     render();
   }
 });

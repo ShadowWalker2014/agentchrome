@@ -64,7 +64,7 @@ Install it with one command:
 curl -fsSL https://agentchrome.dev/install | sh
 ```
 
-The installer needs Node.js 18 or newer and Chrome 120 or newer. It creates an account, adds an MCP server named `agentchrome` to every agent it detects, links a shared skill, unpacks the extension to `~/.agentchrome/extension` and prints a pairing code. You then load the extension unpacked in `chrome://extensions` and connect it. The extension is not on the Chrome Web Store yet.
+The installer needs Node.js 18 or newer and Chrome 120 or newer. It creates an account, adds an MCP server named `agentchrome` to every agent it detects, links a shared skill, unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code. You then load the extension unpacked in `chrome://extensions` and connect it. The extension is not on the Chrome Web Store yet.
 
 ### What the agent can do
 

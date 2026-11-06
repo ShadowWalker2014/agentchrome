@@ -23,14 +23,14 @@ It needs Node.js 18 or newer and Chrome 120 or newer. When it finds the `grok` c
 
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json`.
 2. Runs `grok mcp remove agentchrome` and then `grok mcp add --scope user --transport http` with your URL and `Authorization` header.
-3. Unpacks the extension to `~/.agentchrome/extension` and prints a pairing code.
+3. Unpacks the extension to `~/Documents/Agent Chrome` and prints a pairing code.
 
 To install for Grok only, run `agentchrome install grok`.
 
 ## Load the extension once per Chrome profile
 
 1. Open `chrome://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`.
+2. Drag the **Agent Chrome** folder from Documents onto the page, or click **Load unpacked** and choose it.
 3. Press **Sign in to connect** in the popup, or paste the pairing code.
 
 Run `agentchrome status` afterwards. You should see your browser online and a check mark next to Grok.

@@ -31,13 +31,14 @@
           </div>
           <p id="waiting" class="muted small" hidden>Finish signing in in the new tab. This page updates by itself.</p>
           <div id="pairError" class="alert" role="alert" hidden></div>
+          <p class="muted small codehint">Ran the installer? Paste the pairing code it printed instead.</p>
+          <form id="pairForm" class="pairrow" autocomplete="off">
+            <input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" aria-label="Pairing code">
+            <button id="pair" class="btn" type="submit">Connect with code</button>
+          </form>
           <details id="localBox"><summary>Running a local server instead?</summary>
-            <p class="muted small">Start it with <code>agentchrome serve</code>, get a code with <code>agentchrome pair --local</code>, then paste it here.</p>
-            <form id="pairForm" class="pairrow" autocomplete="off">
-              <input id="code" class="code" placeholder="XXXXX-XXXXX" maxlength="11" spellcheck="false" aria-label="Pairing code">
-              <input id="server" class="mono pname" spellcheck="false" aria-label="Local server URL">
-              <button id="pair" class="btn" type="submit">Connect</button>
-            </form>
+            <p class="muted small">Start it with <code>agentchrome serve</code> and get a code with <code>agentchrome pair --local</code>. Paste the code above and set the server here.</p>
+            <input id="server" class="mono pname localserver" spellcheck="false" aria-label="Local server URL">
           </details>
         </div>
       </li>

@@ -43,22 +43,28 @@ You need Node.js 18 or newer and Google Chrome.
 curl -fsSL https://agentchrome.dev/install | sh
 ```
 
+On Windows, run this in PowerShell instead:
+
+```powershell
+irm https://agentchrome.dev/install.ps1 | iex
+```
+
 In one pass, the installer:
 
 1. Creates your account and saves the key to `~/.config/agentchrome/config.json` with `chmod 600`.
 2. Adds an MCP server named `agentchrome` to every agent it finds, in that agent's **user-level** config (table below).
 3. Writes the `agentchrome` skill once, to `~/.agents/skills/agentchrome`, and **symlinks** it into each agent's skills folder.
-4. Unpacks the extension to `~/.agentchrome/extension`.
+4. Unpacks the extension to a visible **Agent Chrome** folder in Documents (`~/Documents/Agent Chrome` on macOS and Linux, `Documents\Agent Chrome` on Windows).
 5. Prints a pairing code and copies it to your clipboard.
 
 To keep everything on your machine with no cloud at all, add `--local`. See [Local mode](#local-mode).
 
 ### 2. Load the extension, once per Chrome profile
 
-The installer opens `chrome://extensions` and shows the folder in Finder for you.
+The installer opens `chrome://extensions` and selects the **Agent Chrome** folder in Finder or File Explorer for you. Keep the folder there: Chrome loads the extension from it.
 
 1. In `chrome://extensions`, turn on **Developer mode**.
-2. Click **Load unpacked** and choose `~/.agentchrome/extension`. Run `agentchrome extension --path` to print the full path.
+2. Drag the **Agent Chrome** folder onto the page, or click **Load unpacked** and choose Documents → **Agent Chrome**. Run `agentchrome extension --path` to print the full path.
 3. Pin **Agent Chrome**, click it, paste the pairing code and press **Connect**.
 
 To add another profile (Work, Personal, a client's), switch to that profile, load the same folder, and run `agentchrome pair` for a new code. Each profile appears as its own browser in `list_browsers`.

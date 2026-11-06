@@ -39,7 +39,7 @@ Agent Chrome takes one command and one manual step:
 curl -fsSL https://agentchrome.dev/install | sh
 ```
 
-The installer adds an MCP server named `agentchrome` to every agent it finds and unpacks the extension to `~/.agentchrome/extension`. Then you turn on Developer mode at `chrome://extensions`, click Load unpacked, and paste the pairing code. Agent Chrome is not on the Chrome Web Store yet. See [the install guide](/docs/install).
+The installer adds an MCP server named `agentchrome` to every agent it finds and unpacks the extension to `~/Documents/Agent Chrome`. Then you turn on Developer mode at `chrome://extensions`, click Load unpacked, and paste the pairing code. Agent Chrome is not on the Chrome Web Store yet. See [the install guide](/docs/install).
 
 ## Which agents it works with
 

@@ -31,7 +31,7 @@ Run the installer, then load the extension in Chrome:
 curl -fsSL https://agentchrome.dev/install | sh
 ```
 
-The installer adds an MCP server named `agentchrome` to every agent it finds, unpacks the extension to `~/.agentchrome/extension`, and prints a pairing code. In `chrome://extensions`, turn on Developer mode, click Load unpacked, choose that folder, and paste the code in the popup. See [Install Agent Chrome](/docs/install) for the details.
+The installer adds an MCP server named `agentchrome` to every agent it finds, unpacks the extension to `~/Documents/Agent Chrome`, and prints a pairing code. In `chrome://extensions`, turn on Developer mode, drag that folder onto the page, and paste the code in the popup. See [Install Agent Chrome](/docs/install) for the details.
 
 ![Agent working in Chrome](/media/agent-view.gif)
 

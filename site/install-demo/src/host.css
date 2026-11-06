@@ -1,0 +1,108 @@
+/* The walkthrough's controls, under the scene, on the page's dark ground. */
+
+.iwc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.iwc button {
+  font: 500 13px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #d4d4d8;
+  border: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iwc button:focus-visible {
+  outline: 2px solid #5b8dff;
+  outline-offset: 2px;
+}
+
+.iwc .iwc-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.iwc .iwc-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.iwc .iwc-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.iwc .iwc-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.iwc .iwc-dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  font-variant-numeric: tabular-nums;
+  color: #a1a1aa;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.iwc .iwc-dot[data-done] {
+  color: #d4d4d8;
+  background: rgba(47, 107, 255, 0.18);
+}
+
+.iwc .iwc-dot[data-active] {
+  color: #fff;
+  background: #2f6bff;
+  box-shadow: 0 0 0 4px rgba(47, 107, 255, 0.2);
+}
+
+.iwc .iwc-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  margin-left: 6px;
+  padding: 0 14px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: background-color 0.15s ease;
+}
+
+.iwc .iwc-play:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 420px) {
+  .iwc {
+    gap: 6px;
+  }
+
+  .iwc .iwc-dots {
+    gap: 4px;
+  }
+
+  .iwc .iwc-play {
+    width: 34px;
+    margin-left: 2px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .iwc .iwc-play span {
+    display: none;
+  }
+}

@@ -25,7 +25,7 @@ Every page is a Markdown file in `site/content/` that `scripts/build-content.mjs
   - creates an account,
   - adds an MCP server named `agentchrome` at user level to every agent it detects (Claude Code, Codex, Gemini CLI, Antigravity, Grok, Muse, Cursor, opencode, Windsurf, plus proxy config folders such as `~/.codex-proxy`),
   - links a shared skill,
-  - unpacks the extension to `~/.agentchrome/extension`,
+  - unpacks the extension to `~/Documents/Agent Chrome`,
   - opens `chrome://extensions`, then prints a pairing code.
 - **Load the extension:** at `chrome://extensions`, turn on Developer mode, click Load unpacked, choose the folder, then press **Sign in to connect** in the popup or paste the code. It is not on the Chrome Web Store yet; say "load unpacked". A zip is at https://agentchrome.dev/agentchrome-extension.zip.
 - **CLI:** `agentchrome setup | pair | install [ids] [--oauth] | uninstall | status | revoke <id> | rotate-key | key | serve [--install] | extension`.
